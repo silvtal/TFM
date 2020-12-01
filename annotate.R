@@ -73,12 +73,14 @@ if (skip_alignment == FALSE) {
   tree_file         <- opt$tree
   otus_fasta_file   <- opt$fasta
   db_16S            <- opt$db16s
+  
   checking   <- opt$checking
   if (checking==TRUE & is.null(opt$experiment)) {
     stop("When --checking TRUE, a experiment file must be specified")
-    } else if (checking == TRUE) {
-      exp = opt$experiment
-    }
+  } else if (checking == TRUE) {
+    exp = opt$experiment
+  }
+
 } else {
   if (is.null(opt$genomes)) {
     stop("Please provide a file with the list of genomes to annotate")
@@ -87,10 +89,12 @@ if (skip_alignment == FALSE) {
     }
   }
 
+# Annotation variables
 outputdir         <- opt$outputdir
 outputname        <- opt$outputname
 db_protein_folder <- opt$dbproteins
 emapper_path      <- opt$emapper_path
+
 
 if (is.null(opt$dmnd_db)) {
   emapper_folder  <- system(paste0("echo $(dirname ",emapper_path,")"),intern=TRUE)
@@ -102,7 +106,7 @@ if (is.null(opt$dmnd_db)) {
 #   Anotar los genomas   
 # =======================
 
-if (skip_alignment == FALSE) {
+if (skip_alignment == TRUE) {
   genomes <- scan(genomes,character(),sep="\n")
   
   #   Anotar el genoma asignado a cada hoja con eggNOG-mapper   
@@ -114,12 +118,13 @@ if (skip_alignment == FALSE) {
   # --------------------------
   if (!skip_consensus) {
     system(paste("python3 consenso_EGG.py $(realpath",outputdir,") $(realpath",outputdir,")",outputname))
-  }
   
   #  Fabricar modelo con CarveMe 
   # -----------------------------
   # TODO en este caso no podemos leer la taxonomía, pero podríamos pedirla al user o permitirle que indique gram u otros argumentos de carveme...
   system(paste0("carve --egg ",outputname,".tsv -o ",outputdir,"/",outputname,".xml"))
+  
+  }
   
 # TODO reconsider esto de abajo: meto esta funcionalidad?
 } else {
