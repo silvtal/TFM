@@ -176,9 +176,12 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
 
 
 
-emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_path) {
-  # TODO cambiar cpu
-  returned <- system(paste0(emapper_path," -m diamond --cpu ",cores," -i ",db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
+emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_path, cores) {
+  system(paste0(emapper_path," -m diamond --cpu ",cores," --no_annot --no_file_comments -i ",
+                db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",
+                outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
+  returned <- system(paste0(emapper_path," --annotate_hits_table ",outputdir,"/",outputname,
+                ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir))
   if (returned != 0) {
     stop("eggNOG-mapper returned non-zero status. If your Diamond version is different from the eggNOG-mapper one 
          (e.g. the CarveMe version is in the PATH) please create a new database with create_compatible_database.R 
@@ -188,7 +191,7 @@ emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_p
 
 
 
-annotate = function(genomes, outputdir, db_protein_folder, emapper_path) {
+annotate = function(genomes, outputdir, db_protein_folder, emapper_path, cores) {
   if (!file.exists(outputdir)){
     system(paste0("mkdir ",outputdir)) }
   
@@ -199,6 +202,7 @@ annotate = function(genomes, outputdir, db_protein_folder, emapper_path) {
             db_protein_folder = db_protein_folder,
             outputname=genome,
             outputdir=outputdir,
-            emapper_path=emapper_path) 
+            emapper_path=emapper_path,
+            cores=cores) 
   },mc.cores=cores))
 }

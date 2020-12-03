@@ -62,6 +62,7 @@ parser <- OptionParser(option_list=option_list)
 opt <- parse_args(parser)
 
 cores <- opt$cores
+skip_consensus <- opt$skip_consensus
 skip_alignment <- opt$skip_alignment 
 if (skip_alignment == FALSE) {
   stop("The Nucmer alignment functionality is not yet available.")
@@ -111,7 +112,7 @@ if (skip_alignment == TRUE) {
   
   #   Anotar el genoma asignado a cada hoja con eggNOG-mapper   
   # ------------------------------------------------------------
-  annotate(genomes, outputdir, db_protein_folder, emapper_path)
+  annotate(genomes, outputdir, db_protein_folder, emapper_path, cores)
   system("rm outputdir/*seed_orthologs")
   
   #   Crear genoma consenso   
@@ -158,8 +159,8 @@ if (skip_alignment == TRUE) {
     node_outputname <- paste0(outputname,"_",nodos[i])
     system(paste0("mkdir ",node_outputdir))
     
-    annotate(genomes[[i]], node_outputdir, db_protein_folder, emapper_path)
-    system("rm outputdir/*seed_orthologs")
+    annotate(genomes[[i]], node_outputdir, db_protein_folder, emapper_path, cores)
+    system(paste0("rm ",outputdir,"/*seed_orthologs"))
     
     #   Crear genoma consenso   
     # --------------------------

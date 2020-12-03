@@ -127,7 +127,7 @@ if (is.global){
     return(result)
     }
   
-  node_1_index    <- sapply(files_names,FUN=function(filename){head(strsplit(filename,split="_")[[1]],n=1)},USE.NAMES = FALSE)
+  node_1_index    <- unique(sapply(files_names,FUN=function(filename){head(strsplit(filename,split="_")[[1]],n=1)},USE.NAMES = FALSE))
   
   donor_node      <- sapply(merged.files[,"donor"], check_node, node_1_index, USE.NAMES=FALSE)
   receiver_node   <- sapply(merged.files[,"receiver"],check_node, node_1_index, USE.NAMES=FALSE)
@@ -142,10 +142,8 @@ if (is.global){
   all.metabolites.by.node <- setNames(aggregate(x=merged.files[,c(7,9)], 
                                by=list(merged.files$compound,merged.files$donor_node, merged.files$receiver_node),
                                mean,),nm=c("compound","donor_node","receiver_node","mus","smetana"))
-  all.metabolites.by.node <- cbind(
-    all.metabolites.by.node[order(all.metabolites.by.node$smetana,decreasing=TRUE),],
-    merged.files[rownames(all.metabolites.by.node),c("donor", "receiver")]
-    )
+  
+  all.metabolites.by.node <- all.metabolites.by.node[order(all.metabolites.by.node$smetana,decreasing=TRUE),]
   
   rm(merged.files) # free memory
   
@@ -161,4 +159,6 @@ if (is.global){
   write.table(all.metabolites[1:10,],file=report_name,append=TRUE,quote=FALSE,sep="\t",row.names=FALSE)
   write("\n10 most exchanged metabolites by donor node:",file=report_name,append=TRUE)
   write.table(all.metabolites.by.node[1:10,],file=report_name,append=TRUE,quote=FALSE,sep="\t",row.names=FALSE)
+  write("\n'first' node includes ",file=report_name,append=TRUE)
+  write(node_1_index, file=report_name,append=TRUE)
 }

@@ -16,6 +16,7 @@ start = time.time() # para devolver al final el tiempo de ejecución
 # Leer todos los modelos
 # =============================================================================
 # INPUT: consenso_EGG.py input_folder output_folder outputname
+# SOLO LEE ARCHIVOS QUE CONTENGAN "annotations" EN EL NOMBRE
 wd = sys.argv[1].rstrip("/") # !!! ponerle un input más guay (con flags)
 os.chdir(wd)
 
@@ -31,7 +32,8 @@ else:
 
 models = [] # guardamos aquí los nombres de los archivos
 for filename in os.listdir():
-    models.append(wd+"/"+filename)
+    if "annotations" in filename: # ignore seed orthologs files
+        models.append(wd+"/"+filename)
     # !!! no pongo filtro. pero estaría bien un warning AL ABRIR el modelo, si 
     # no se puede abrir o si no tiene todas las columnas !
 
@@ -97,7 +99,7 @@ for r in reac2idx.keys():
 # =============================================================================
 if not os.path.exists(outputdir):
     os.mkdir(outputdir)
-f = open(outputdir+"/"+outputname+".tsv","a")
+f = open(outputdir+"/"+outputname+".tsv","a+")
 
 f.write("# emapper version: emapper-2.0.1 emapper DB: 2.0\n")
 f.write("# consensus annotation file for "+outputname+"\n")
