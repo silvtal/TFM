@@ -181,7 +181,7 @@ emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_p
                 db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",
                 outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
   returned <- system(paste0(emapper_path," --annotate_hits_table ",outputdir,"/",outputname,
-                ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir))
+                ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir," --override"))
   if (returned != 0) {
     stop("eggNOG-mapper returned non-zero status. If your Diamond version is different from the eggNOG-mapper one 
          (e.g. the CarveMe version is in the PATH) please create a new database with create_compatible_database.R 

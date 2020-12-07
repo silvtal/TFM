@@ -113,7 +113,7 @@ if (skip_alignment == TRUE) {
   #   Anotar el genoma asignado a cada hoja con eggNOG-mapper   
   # ------------------------------------------------------------
   annotate(genomes, outputdir, db_protein_folder, emapper_path, cores)
-  system("rm outputdir/*seed_orthologs")
+  system(paste0("rm ",outputdir,"/*seed_orthologs"))  
   
   #   Crear genoma consenso   
   # --------------------------
