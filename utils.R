@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+library(parallel)
 
 nucmer <- function(nucmer_path, db_16S, fasta_16S) {
   # Alinea cada secuencia del archivo fasta indicado ("fasta_16S") con las secuencias
@@ -10,7 +11,7 @@ nucmer <- function(nucmer_path, db_16S, fasta_16S) {
 
 
 
-check = function(nodos, exp) {
+check = function(nodos, exp, cores=4) {
   # Dada una pareja de nodos ("nodos", formato ape::phylo) y la ruta de un archivo con
   # datos experimentales ("exp"), determina y devuelve las combinaciones de OTUs 
   # inter-nodo que coinciden en una misma muestra experimental

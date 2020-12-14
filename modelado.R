@@ -102,7 +102,7 @@ system("rm 99_otus_col*") # elimino archivos temporales
 # Asigno secuencias 16S a cada hoja
 if (checking == TRUE) {
   # Pares de hojas de los dos nodos. INTER-NODO.
-  filtered_pairs <- check(nodos=nodos_hojas, exp=exp) 
+  filtered_pairs <- check(nodos=nodos_hojas, exp=exp,cores=cores) 
   # De cada hoja que pase el checking, tomo la secuencia de 16S del fasta original.
   # Son todas las hojas de cada nodo que pasan cualquiera de los dos checkings.
   checked_tipl <- list(levels(filtered_pairs[,1]),levels(filtered_pairs[,2]))

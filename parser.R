@@ -143,6 +143,8 @@
                                  by=list(merged.files$compound,merged.files$donor_node, merged.files$receiver_node),
                                  mean,),nm=c("compound","donor_node","receiver_node","mus","smetana"))
     
+    # Ordered
+    all.metabolites <- all.metabolites[order(all.metabolites$smetana,decreasing=TRUE),]
     all.metabolites.by.node <- all.metabolites.by.node[order(all.metabolites.by.node$smetana,decreasing=TRUE),]
     
     rm(merged.files) # free memory
