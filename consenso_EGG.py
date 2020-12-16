@@ -15,27 +15,37 @@ start = time.time() # para devolver al final el tiempo de ejecución
 # =============================================================================
 # Leer todos los modelos
 # =============================================================================
-# INPUT: consenso_EGG.py input_folder output_folder outputname
+# INPUT: consenso_EGG.py input_folder output_folder (outputname) (percentage)
 # SOLO LEE ARCHIVOS QUE CONTENGAN "annotations" EN EL NOMBRE
+# TIENE QUE USARSE EL "REALPATH"
 wd = sys.argv[1].rstrip("/") # !!! ponerle un input más guay (con flags)
-os.chdir(wd)
 
 if len(sys.argv) > 2:
     outputdir = sys.argv[2].rstrip("/") # si el usuario da el outputdir
     
     if len(sys.argv) > 3:
         outputname = sys.argv[3].rstrip("/") # si el usuario da el nombre del output
+        if len(sys.argv) > 4: 
+            perc = float(sys.argv[4]) # si el usuario da el porcentaje para filtrar.
+        else:
+            perc = 0.80
     else:
         outputname = wd.split("/")[-1]
 else:
     outputdir = wd
 
 models = [] # guardamos aquí los nombres de los archivos
-for filename in os.listdir():
+for filename in os.listdir(wd):
     if "annotations" in filename: # ignore seed orthologs files
         models.append(wd+"/"+filename)
-    # !!! no pongo filtro. pero estaría bien un warning AL ABRIR el modelo, si 
+    # !!! estaría bien un warning AL ABRIR el modelo, si 
     # no se puede abrir o si no tiene todas las columnas !
+
+if len(models) == 0:
+    quit("The input file is empty.")
+else:
+    num_of_models = len(models)
+
 
 # =============================================================================
 # Crear un almacén de todas las reacciones a partir de un modelo cualquiera.
@@ -73,14 +83,14 @@ for model in models[1:]:
             all_reactions = all_reactions.append(df_row,ignore_index=True) # la añadimos al almacén
             last_index += 1              # y anotamos su índice
             reac2idx[reaction] = last_index
+            
         
         else:
             conteo[reaction] += 1        # la contamos
             # puntuación nueva ponderada (el resultado es la media para esa reacción):
             old_score = all_reactions.at[reac2idx[reaction],"score"]
             new_score = ( old_score *(conteo[reaction]-1) + df_row["score"] ) /conteo[reaction]
-            all_reactions.at[reac2idx[reaction],"score"] = new_score # actualizar 
-    
+            all_reactions.at[reac2idx[reaction],"score"] = new_score # actualizar
     # cerramos el modelo (lo quitamos de memoria)
     del(open_model)
     
@@ -88,12 +98,9 @@ for model in models[1:]:
 # =============================================================================
 # Filtro y elimino las reacciones que están en menos de un 80% de modelos:
 # =============================================================================
-total = len(models)
-
 for r in reac2idx.keys():
-    if conteo[r] < 0.80*total:
-        all_reactions.drop(reac2idx[r],axis=0)
-
+    if conteo[r] < int(perc*num_of_models):
+        all_reactions = all_reactions.drop(reac2idx[r],axis=0)
 # =============================================================================
 # Guardo el archivo de anotaciones consenso
 # =============================================================================
@@ -109,8 +116,6 @@ all_reactions.to_csv(f,sep="\t",header=False, index=False)
 
 f.close()
 
-# primer modelo : 6147 reacciones
-# modelo consenso: 7066 reacciones
-
 end = time.time()
 print("Running time: ",end - start)
+

@@ -67,8 +67,14 @@ carve = function(line, taxonom, outputpath, db_protein_folder) {
   # genoma dado.
   leaf = strsplit(line, split=" ")[[1]][1]
   file = strsplit(line, split=" ")[[1]][2]
-  system(paste0("carve ",db_protein_folder,file,"_protein.faa ",
-                gram(taxonom)," -o ",outputpath,leaf,".xml")) # nombres de archivo = nombre de hoja
+  outf = paste0(outputpath,leaf,".xml")
+  if (!file.exists(outf)) {
+    print(paste0(outf," model already exists. Moving to the next one..."))
+  } else {
+    system(paste0("carve ",db_protein_folder,file,"_protein.faa ",
+                gram(taxonom)," -o ",outf)) # nombres de archivo = nombre de hoja
+    print(paste0(outf," model created"))
+  }
 }
 
 
