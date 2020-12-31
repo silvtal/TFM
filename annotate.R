@@ -123,7 +123,7 @@ if (skip_alignment == TRUE) {
   #  Fabricar modelo con CarveMe 
   # -----------------------------
   # TODO en este caso no podemos leer la taxonomía, pero podríamos pedirla al user o permitirle que indique gram u otros argumentos de carveme...
-  system(paste0("carve --egg ",outputname,".tsv -o ",outputdir,"/",outputname,".xml"))
+    system(paste0("carve --egg ",outputname,".tsv -o ",outputdir,"/",outputname,".xml"))
   
   }
   
@@ -162,15 +162,17 @@ if (skip_alignment == TRUE) {
     annotate(genomes[[i]], node_outputdir, db_protein_folder, emapper_path, cores)
     system(paste0("rm ",outputdir,"/*seed_orthologs"))
     
+    if (!skip_consensus) {
+  
     #   Crear genoma consenso   
     # --------------------------
-    if (!skip_consensus) {
       system(paste("python3 consenso_EGG.py $(realpath",node_outputdir,") $(realpath",node_outputdir,")",node_outputname))
-    }
+    
     
     #  Fabricar modelo con CarveMe 
     # -----------------------------
-    system(paste0("carve --egg ",node_outputname,".tsv ",gram(taxonom[i])," -o ",node_outputdir,"/",node_outputname,".xml"))
+      system(paste0("carve --egg ",node_outputname,".tsv ",gram(taxonom[i])," -o ",node_outputdir,"/",node_outputname,".xml"))
+    }
   }
 }
 

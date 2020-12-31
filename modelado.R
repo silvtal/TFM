@@ -165,9 +165,15 @@ if (run_smetana == TRUE) {
   generated_pairs_filename = "generated_pairs.txt"
   dump <- file.create(paste0(output,generated_pairs_filename)) # vaciamos el archivo, de existir, o lo creamos si no existe
   
-  failed_pairs <- apply(pairs, MARGIN=1, smetana, modelfilepath = "models/", output=output, 
+  # Paralelización con parApply (solo para este paso)
+  cl <- makePSOCKcluster(cores)
+  setDefaultCluster(cl)
+  clusterExport(NULL, c("smetana")) # Cargamos en el cluster la función necesaria
+  failed_pairs <- parApply(NULL, pairs, MARGIN=1, FUN=function(z) {
+    smetana(z, modelfilepath = "models/", output=output, 
                         coupling=coupling, output_coupling=output_coupling, 
                         generated_pairs_filename=generated_pairs_filename)
+    })
   
   failed_pairs[simplify2array(mclapply(failed_pairs, is.null, mc.cores=cores))] <- NULL
   

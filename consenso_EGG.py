@@ -35,6 +35,7 @@ else:
     outputdir = wd
 
 models = [] # guardamos aquí los nombres de los archivos
+
 for filename in os.listdir(wd):
     if "annotations" in filename: # ignore seed orthologs files
         models.append(wd+"/"+filename)
@@ -111,11 +112,10 @@ f = open(outputdir+"/"+outputname+".tsv","a+")
 f.write("# emapper version: emapper-2.0.1 emapper DB: 2.0\n")
 f.write("# consensus annotation file for "+outputname+"\n")
 f.write("# time: "+str(datetime.datetime.now())+"\n")
-f.write("#query_name	seed_eggNOG_ortholog	seed_ortholog_evalue	seed_ortholog_score	best_tax_level	Preferred_name	GOs	EC	KEGG_ko	KEGG_Pathway	KEGG_Module	KEGG_Reaction	KEGG_rclass	BRITE	KEGG_TCCAZy	BiGG_Reaction	taxonomic scope	eggNOG OGs	best eggNOG OG	COG Functional cat.	eggNOG free text desc.\n")
-all_reactions.to_csv(f,sep="\t",header=False, index=False)
+f.write("#query_name	seed_eggNOG_ortholog	seed_ortholog_evalue	seed_ortholog_score	best_tax_level	Preferred_name	GOs	EC	KEGG_ko	KEGG_Pathway	KEGG_Module	KEGG_Reaction	KEGG_rclass	BRITE	KEGG_TC	CAZy	BiGG_Reaction	taxonomic scope	eggNOG OGs	best eggNOG OG	COG Functional cat.	eggNOG free text desc.\n")
+all_reactions.to_csv(f,sep=" ",header=False, index=False)
 
 f.close()
 
 end = time.time()
 print("Running time: ",end - start)
-

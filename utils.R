@@ -68,7 +68,7 @@ carve = function(line, taxonom, outputpath, db_protein_folder) {
   leaf = strsplit(line, split=" ")[[1]][1]
   file = strsplit(line, split=" ")[[1]][2]
   outf = paste0(outputpath,leaf,".xml")
-  if (!file.exists(outf)) {
+  if (file.exists(outf)) {
     print(paste0(outf," model already exists. Moving to the next one..."))
   } else {
     system(paste0("carve ",db_protein_folder,file,"_protein.faa ",
@@ -95,13 +95,23 @@ smetana = function(pair, modelfilepath="models/", output, coupling=TRUE, output_
   m2 = pair[[2]]
   if (file_test("-f",paste0(filepath1,m1,".xml")) & file_test("-f",paste0(filepath2,m2,".xml"))) {
     for (i in c("global","detailed")){
-      system(paste0("smetana --",i," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
-                    " --mediadb ",mediadb," --molweight --no-coupling -o ",output,i,"/",m1,"_",m2,"_",medium))
-      if (coupling==TRUE) {
+      output_filename=paste0(output,i,"/",m1,"_",m2,"_",medium)
+      if (!file.exists(paste0(output_filename,"_",i,".tsv"))) { #solo crea el archivo si no existía ya
         system(paste0("smetana --",i," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
-                      " --mediadb ",mediadb," --molweight -o ",output_coupling,i,"/",m1,"_",m2,"_",medium))
+                      " --mediadb ",mediadb," --molweight --no-coupling -o ",output_filename))
+        write(paste(m1,m2),file=paste0(output, generated_pairs_filename),append=TRUE) # lista de parejas que se han analizado con Smetana
+      } else {
+        print(paste0(output_filename,"_",i,".tsv already exists. Moving to the next pair..."))
       }
-      write(paste(m1,m2),file=paste0(output, generated_pairs_filename),append=TRUE) # lista de parejas que se han analizado con Smetana
+    }
+    if (coupling==TRUE) {  # se hace una ejecución más, pero solo para detailed.
+      output_filename_c=paste0(output_coupling,i,"/",m1,"_",m2,"_",medium)
+      if (!file.exists(paste0(output_filename,"_",i,".tsv"))) { #solo crea el archivo si no existía ya
+        system(paste0("smetana --detailed"," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
+                      " --mediadb ",mediadb," --molweight -o ",output_filename_c))
+      } else {
+        print(paste0(output_filename_c,"_detailed.tsv already exists. Moving to the next pair..."))
+      }
     }
   } else {
     return(pair) # se devuelve 
