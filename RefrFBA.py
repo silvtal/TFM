@@ -11,6 +11,7 @@ import os
 from reframed import FBA, Environment
 from carveme.reconstruction.utils import load_media_db
 import statistics as stats
+import pandas as pd
 
 
 wd = "/home/urihs/Desktop/TFM_private/08_reframed/sin_gapfill/"
@@ -30,6 +31,7 @@ for medium in os.listdir(wd):
 
 media_db = load_media_db("/home/urihs/Desktop/TFM_private/08_reframed/test_media.txt", compound_col="compound")
 
+results = [] # lista de listas que finalmente dará un dataframe/csv con todos los datos
 for medium in models.keys():
     medio = "M9["+medium+"]"
     # medio = "LB"
@@ -47,11 +49,11 @@ for medium in models.keys():
             model = load_cbmodel(models[medium][node][f],flavor="fbc2")
             init_env.apply(model)
             solution = FBA(model,   objective="Growth", get_values=False)    
-            print(f)
             print(solution)
             if solution.fobj!=0:
                 n+=1
                 total.append(solution.fobj)
+            results.append([medium,node,f,solution.fobj])
         try:
             media = sum(total)/n
             print("media del nodo: ", media)
@@ -62,3 +64,6 @@ for medium in models.keys():
         print("RATIO : ",media_prev/media) # es E/P para leu y P/E para cit y glc
     except:
         pass
+
+all_data=pd.DataFrame(results,columns=["Medio","Nodo","Modelo","Crecimiento"])
+all_data.to_csv("report_reframed.csv",index=False)

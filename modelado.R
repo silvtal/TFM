@@ -166,16 +166,15 @@ if (run_smetana == TRUE) {
   dump <- file.create(paste0(output,generated_pairs_filename)) # vaciamos el archivo, de existir, o lo creamos si no existe
   
   # Paralelización con parApply (solo para este paso)
-  cl <- makePSOCKcluster(cores)
-  setDefaultCluster(cl)
-  clusterExport(NULL, c("smetana")) # Cargamos en el cluster la función necesaria
-  failed_pairs <- parApply(NULL, pairs, MARGIN=1, FUN=function(z) {
+  failed_pairs <- mcmapply(pairs, FUN=function(z) {
     smetana(z, modelfilepath = "models/", output=output, 
                         coupling=coupling, output_coupling=output_coupling, 
                         generated_pairs_filename=generated_pairs_filename)
-    })
+    }, mc.cores=cores)
   
   failed_pairs[simplify2array(mclapply(failed_pairs, is.null, mc.cores=cores))] <- NULL
+  failed_pairs <- t(failed_pairs) # preparamos la matriz para el siguiente paso
+  colnames(failed_pairs) <-  seq(length(failed_pairs[1,]))
   
   # Anotamos las parejas que no han sido analizadas por Smetana (no pasaron el filtro de Nucmer)
   write(x=paste0("filtered out: ", 100*length(failed_pairs)/length(pairs[,1])/2,"%"), file=paste0(output,"filtered_out_pairs.txt"))
@@ -185,7 +184,7 @@ if (run_smetana == TRUE) {
 
   print(paste0("Finished SMETANA analysis."))
 }
-
+# 
 end.time <- Sys.time()
 time.taken <- end.time - start.time
 print(paste0("Execution time: ",format(time.taken,format = "%H %M %S")))

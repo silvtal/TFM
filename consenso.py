@@ -15,7 +15,7 @@ start = time.time() # para devolver al final el tiempo de ejecución
 # =============================================================================
 # Leer todos los modelos
 # =============================================================================
-# INPUT: consenso_EGG.py input_folder output_folder outputname
+# INPUT: consenso.py input_folder output_folder outputname
 wd = sys.argv[1] # !!! ponerle un input más guay (con flags)
 os.chdir(wd)
 
