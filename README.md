@@ -7,7 +7,7 @@ Este repositorio recoge los *scripts* desarrollados para automatizar los anális
 
 Las funciones definidas para estos scripts se encuentran en **utils.R**.
 
-**RefrFBA_E2.R** es un _script_ que se encarga de ejecutar simulaciones de FBA para todos los modelos de un PCG dado. Devuelve las tasas de crecimiento en forma de archivos _.csv_ y por la salida estándar. 
+**RefrFBA.R** es un _script_ que se encarga de ejecutar simulaciones de FBA para todos los modelos de un PCG dado. Devuelve las tasas de crecimiento en forma de archivos _.csv_ y por la salida estándar. 
 
 **parser.R** se encarga de generar informes en formato de texto plano que resumen los resultados de Smetana.
 
