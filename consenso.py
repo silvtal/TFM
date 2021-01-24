@@ -16,7 +16,7 @@ start = time.time() # para devolver al final el tiempo de ejecución
 # Leer todos los modelos
 # =============================================================================
 # INPUT: consenso.py input_folder output_folder outputname
-wd = sys.argv[1] # !!! ponerle un input más guay (con flags)
+wd = sys.argv[1] 
 os.chdir(wd)
 
 if len(sys.argv) > 2:

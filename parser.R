@@ -6,6 +6,9 @@ library("parallel")
 # ===================
 #     Take input     
 # ===================
+### HELP ###
+# parser.R -d/-g input_file -c cores --report_name reportname(can include path)
+
 option_list <- list(
   make_option(c("-g", "--global"), type="character", default=NULL,
               help="Input folder with Smetana global results (e.g. ./my_results/NodeXXXXX/smetana_results/global).", metavar="character"),

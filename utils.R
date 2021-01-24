@@ -97,6 +97,7 @@ smetana = function(pair, modelfilepath="models/", output, coupling=TRUE, output_
     for (i in c("global","detailed")){
       output_filename=paste0(output,i,"/",m1,"_",m2,"_",medium)
       if (!file.exists(paste0(output_filename,"_",i,".tsv"))) { #solo crea el archivo si no existía ya
+        print(paste0("Creating report ",output_filename,"_",i,"..."))
         system(paste0("smetana --",i," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
                       " --mediadb ",mediadb," --molweight --no-coupling -o ",output_filename))
         write(paste(m1,m2),file=paste0(output, generated_pairs_filename),append=TRUE) # lista de parejas que se han analizado con Smetana
@@ -107,6 +108,7 @@ smetana = function(pair, modelfilepath="models/", output, coupling=TRUE, output_
     if (coupling==TRUE) {  # se hace una ejecución más, pero solo para detailed.
       output_filename_c=paste0(output_coupling,i,"/",m1,"_",m2,"_",medium)
       if (!file.exists(paste0(output_filename,"_",i,".tsv"))) { #solo crea el archivo si no existía ya
+        print(paste0("Creating report ",output_filename,"_",i,"..."))
         system(paste0("smetana --detailed"," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
                       " --mediadb ",mediadb," --molweight -o ",output_filename_c))
       } else {
