@@ -3,7 +3,7 @@
 """
 Created on Fri Nov 20 11:18:55 2020
 
-@author: urihs
+@author: Silvia Talavera Marcos
 """
 
 import os
@@ -11,14 +11,16 @@ import sys
 from carveme.reconstruction.eggnog import load_eggnog_data
 import datetime, time
 
-start = time.time() # para devolver al final el tiempo de ejecución
+start = time.time()
+
 # =============================================================================
 # Leer todos los modelos
 # =============================================================================
 # INPUT: consenso_EGG.py input_folder output_folder (outputname) (percentage)
-# SOLO LEE ARCHIVOS QUE CONTENGAN "annotations" EN EL NOMBRE
-# TIENE QUE USARSE EL "REALPATH"
-wd = sys.argv[1].rstrip("/") # !!! ponerle un input más guay (con flags)
+# Only reads files that contain "annotations" in its name
+# The path specified for the input_folder must be the realpath
+
+wd = sys.argv[1].rstrip("/")
 
 if len(sys.argv) > 2:
     outputdir = sys.argv[2].rstrip("/") # si el usuario da el outputdir
@@ -26,7 +28,7 @@ if len(sys.argv) > 2:
     if len(sys.argv) > 3:
         outputname = sys.argv[3].rstrip("/") # si el usuario da el nombre del output
         if len(sys.argv) > 4: 
-            perc = float(sys.argv[4]) # si el usuario da el porcentaje para filtrar.
+            perc = float(sys.argv[4]) # si el usuario da el porcentaje para filtrar
         else:
             perc = 0.80
     else:
@@ -39,8 +41,6 @@ models = [] # guardamos aquí los nombres de los archivos
 for filename in os.listdir(wd):
     if "annotations" in filename: # ignore seed orthologs files
         models.append(wd+"/"+filename)
-    # !!! estaría bien un warning AL ABRIR el modelo, si 
-    # no se puede abrir o si no tiene todas las columnas !
 
 if len(models) == 0:
     quit("The input file is empty.")
@@ -49,13 +49,9 @@ else:
 
 
 # =============================================================================
-# Crear un almacén de todas las reacciones a partir de un modelo cualquiera.
+# Crear un almacén de todas las reacciones a partir de un modelo cualquiera
 # =============================================================================
 all_reactions = load_eggnog_data(models[0],drop_unused_cols=False)
-    # !!! va MUCHO más lento si uso las 17 columnas (drop_unused_cols=False). poniendo 
-    # !!! True funciona exactamente igual pero más rapido, la unica diferencia es que el 
-    # !!! output no tiene todas las columnas. podria ajustar esto para que trabaje con 4 
-    # !!! solo y luego genere una matriz sparse con las 17
 
 # Agrupamos por reacción para evitar repeticiones:
 all_reactions = all_reactions.sort_values(by='score', ascending=False) \
@@ -68,7 +64,7 @@ last_index = len(all_reactions)-1
 #  Voy abriendo los demás y contando las apariciones de cada reacción
 # =============================================================================
 
-# Inauguramos el diccionario de conteo con las reacciones del primer modelo
+# Inicializamos el diccionario de conteo con las reacciones del primer modelo
 conteo = {reac:1 for reac in all_reactions["BiGG_gene"]}
 for model in models[1:]:
     # abrimos el modelo

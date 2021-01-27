@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-if (!require("optparse")) install.packages("optparse")
+library("optparse")
 library("parallel")
 
 # ===================
@@ -17,7 +17,7 @@ option_list <- list(
   make_option(c("-c","--cores"), type="numeric", default=4,
               help="Number of cores to use in parallelization", metavar = "character"),
   make_option(c("--report_name"), type="character", default="report.txt",
-              help="Name of the output report file. Default: report.txt", metavar="character")
+              help="Name of the output report file. Default: ./report.txt", metavar="character")
 )
 
 parser <- OptionParser(option_list=option_list)
@@ -56,7 +56,6 @@ if (is.global){
   # Report MRO=n/a files
   # ====================
   mro.is.na <- as.logical(is.na(dataset["mro"]))
-  
   row_names  <- list.files(global, pattern="*.tsv", full.names=FALSE)
   not_growing <- row_names[mro.is.na]
   
@@ -65,8 +64,8 @@ if (is.global){
   growing <- dataset[!mro.is.na,]
   
   if (length(growing)==0) {
-    write("MRO and MIP was n/a for all files. At least one member of every pair is unable to grow by itself.",file=report_name)
-    stop ("MRO and MIP was n/a for all files. At least one member of every pair is unable to grow by itself.")
+    write("MRO was n/a for all files. The co-culture can't grow.",file=report_name)
+    stop ("MRO was n/a for all files. The co-culture can't grow.")
   } else {
     mean_mro <- mean(growing[,"mro"])
     min_mro  <-  min(growing[,"mro"])

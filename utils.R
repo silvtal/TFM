@@ -11,56 +11,6 @@ nucmer <- function(nucmer_path, db_16S, fasta_16S) {
 
 
 
-check = function(nodos, exp, cores=4) {
-  # Dada una pareja de nodos ("nodos", formato ape::phylo) y la ruta de un archivo con
-  # datos experimentales ("exp"), determina y devuelve las combinaciones de OTUs 
-  # inter-nodo que coinciden en una misma muestra experimental
-  exp = read.csv(exp,sep="\t",skip = 1,row.names=1)
-  
-  # Seleccionamos solo las hojas que estaban en el experimento, para agilizar el proceso
-  lista_nodos <- mclapply(nodos, function(nodo) { nodo$tip.label[nodo$tip.label %in% rownames(exp)]},mc.cores=cores)
-  
-  # Obtengo todas las combinaciones de hojas para cada nodo
-  pairs = expand.grid(lista_nodos[[1]], lista_nodos[[2]], KEEP.OUT.ATTRS = F)
-  
-  # Selecciono las parejas presentes en una misma muestra
-  pairs[,3] = vector(mode="logical",length=length(pairs[,2])) # indicador de si coinciden o no
-  for (muestra in colnames(exp)){
-    # anoto qué otus hay en cada muestra
-    otus=rownames(subset(exp[muestra],exp[muestra]!=0))
-    # indico para cada pareja si coinciden en esa muestra o en otra ya comprobada
-    pairs[,3] = pairs[,3] | pairs[,1] %in% otus & pairs[,2] %in% otus
-  }
-  filtered_pairs  = subset(pairs,pairs[,3]==TRUE)[,0:2]
-  return(filtered_pairs)
-}
-
-
-
-
-gram  = function(taxonom, gramneg = "gramneg.csv", grampos = "grampos.csv") {
-  # Dado un string con la taxonomía en formato GreenGenes, devuelve si es 
-  # gram-positiva o gram-negativa. Si no se reconoce como G+ ni G-, devuelve
-  # un string vacío.
-  phylum  <- strsplit(taxonom, split=";")[[1]][2]
-  gramneg <- levels(read.table(gramnegpath)[[1]])
-  grampos <- levels(read.table(grampospath)[[1]])
-  
-  if (phylum %in% gramneg) {
-    result <- "-u gramneg"
-  }
-  else if (phylum %in% grampos) {
-    result <- "-u grampos"
-  }
-  else {
-    result <- ""
-  }
-  return(result)
-}
-
-
-
-
 carve = function(line, taxonom, outputpath, db_protein_folder) {
   # Dado un string del tipo "<ID de hoja> <ID de genoma anotado>", crea un
   # modelo metabólico de dicha hoja a partir del archivo correspondiente al
@@ -72,7 +22,7 @@ carve = function(line, taxonom, outputpath, db_protein_folder) {
     print(paste0(outf," model already exists. Moving to the next one..."))
   } else {
     system(paste0("carve ",db_protein_folder,file,"_protein.faa ",
-                gram(taxonom)," -o ",outf)) # nombres de archivo = nombre de hoja
+                  gram(taxonom)," -o ",outf)) # nombres de archivo = nombre de hoja
     print(paste0(outf," model created"))
   }
 }
@@ -118,6 +68,72 @@ smetana = function(pair, modelfilepath="models/", output, coupling=TRUE, output_
   } else {
     return(pair) # se devuelve 
   }
+}
+
+
+
+
+emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_path, cores) {
+  system(paste0(emapper_path," -m diamond --cpu ",cores," --no_annot --no_file_comments -i ",
+                db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",
+                outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
+  returned <- system(paste0(emapper_path," --annotate_hits_table ",outputdir,"/",outputname,
+                            ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir," --override"))
+  if (returned != 0) {
+    stop("eggNOG-mapper returned non-zero status. If your Diamond version is different from the eggNOG-mapper one 
+         (e.g. the CarveMe version is in the PATH) please create a new database with create_compatible_database.R 
+         and select it with --dmnd_db when next running annotate.R")
+  }
+}
+
+
+
+
+check = function(nodos, exp, cores=4) {
+  # Dada una pareja de nodos ("nodos", formato ape::phylo) y la ruta de un archivo con
+  # datos experimentales ("exp"), determina y devuelve las combinaciones de OTUs 
+  # inter-nodo que coinciden en una misma muestra experimental
+  exp = read.csv(exp,sep="\t",skip = 1,row.names=1)
+  
+  # Seleccionamos solo las hojas que estaban en el experimento, para agilizar el proceso
+  lista_nodos <- mclapply(nodos, function(nodo) {nodo$tip.label[nodo$tip.label %in% rownames(exp)]},mc.cores=cores)
+  
+  # Obtengo todas las combinaciones de hojas para cada nodo
+  pairs = expand.grid(lista_nodos[[1]], lista_nodos[[2]], KEEP.OUT.ATTRS = F)
+  
+  # Selecciono las parejas presentes en una misma muestra
+  pairs[,3] = vector(mode="logical",length=length(pairs[,2])) # indicador de si coinciden o no
+  for (muestra in colnames(exp)){
+    # anoto qué otus hay en cada muestra
+    otus=rownames(subset(exp[muestra],exp[muestra]!=0))
+    # indico para cada pareja si coinciden en esa muestra o en otra ya comprobada
+    pairs[,3] = pairs[,3] | pairs[,1] %in% otus & pairs[,2] %in% otus
+  }
+  filtered_pairs  = subset(pairs,pairs[,3]==TRUE)[,0:2]
+  return(filtered_pairs)
+}
+
+
+
+
+gram  = function(taxonom, gramneg = "gramneg.csv", grampos = "grampos.csv") {
+  # Dado un string con la taxonomía en formato GreenGenes, devuelve si es 
+  # gram-positiva o gram-negativa. Si no se reconoce como G+ ni G-, devuelve
+  # un string vacío.
+  phylum  <- strsplit(taxonom, split=";")[[1]][2]
+  gramneg <- levels(read.table(gramnegpath)[[1]])
+  grampos <- levels(read.table(grampospath)[[1]])
+  
+  if (phylum %in% gramneg) {
+    result <- "-u gramneg"
+  }
+  else if (phylum %in% grampos) {
+    result <- "-u grampos"
+  }
+  else {
+    result <- ""
+  }
+  return(result)
 }
 
 
@@ -193,20 +209,6 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
   return(queries_v_hits)
 } 
 
-
-
-emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_path, cores) {
-  system(paste0(emapper_path," -m diamond --cpu ",cores," --no_annot --no_file_comments -i ",
-                db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",
-                outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
-  returned <- system(paste0(emapper_path," --annotate_hits_table ",outputdir,"/",outputname,
-                ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir," --override"))
-  if (returned != 0) {
-    stop("eggNOG-mapper returned non-zero status. If your Diamond version is different from the eggNOG-mapper one 
-         (e.g. the CarveMe version is in the PATH) please create a new database with create_compatible_database.R 
-         and select it with --dmnd_db when next running annotate.R")
-  }
-}
 
 
 

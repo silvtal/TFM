@@ -3,7 +3,7 @@
 """
 Created on Fri Dec  4 12:24:06 2020
 
-@author: urihs
+@author: Silvia Talavera Marcos
 """
 
 from reframed import load_cbmodel
@@ -13,7 +13,7 @@ from carveme.reconstruction.utils import load_media_db
 import statistics as stats
 import pandas as pd
 
-# INPUT: RefrFBA_E2.py input_folder/wd mediadb medium outputdir outputname
+# INPUT: RefrFBA.py input_folder/wd mediadb medium outputdir outputname
 
 # IMPRIME la media y la desviación típica del crecimiento de todos los 
 #         modelos de la carpeta dada como entrada
@@ -51,8 +51,7 @@ for f in models:
     model = load_cbmodel(f,flavor="fbc2")
     init_env.apply(model)
     solution = FBA(model,   objective="Growth", get_values=False)    
-    print(solution)
-    if solution.fobj!=0:
+    if solution.fobj>0:
         n+=1
         total.append(solution.fobj)
     results.append([medium,f.split("/")[-1],solution.fobj])
@@ -64,4 +63,4 @@ except:
     pass
 
 all_data=pd.DataFrame(results,columns=["Medio","Modelo","Crecimiento"])
-all_data.to_csv(outputdir+outputname,index=False)
+all_data.to_csv(outputdir+"/"+outputname,index=False)

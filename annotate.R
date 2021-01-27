@@ -3,7 +3,7 @@
 start.time <- Sys.time() # para devolver al final el tiempo de ejecución
 # INPUT: annotate.R -g genomes -o outputname --outputdir outputdir
 # INFO: THIS SCRIPT TAKES A LIST OF GENOMES, ANNOTATES ALL OF THEM WITH EGGNOG MAPPER AND RETURNS THE ANNOTATED FILES PLUS A CONSENSUS ONE
-
+  
 # =======================
 #        FUNCIONES       
 # =======================
@@ -19,14 +19,12 @@ source(paste0(home,"/utils.R")) # cargo las funciones del paquete
 # ==============
 
 option_list <- list(
-  make_option(c("--skip_alignment"), type="logical", default=TRUE,
-              help="If TRUE, a list of genomes to annotate is used as input (--genomes, default). If FALSE, the selected node or nodes' (--nodes) leaves of a given tree (--tree-file, /99_otus_nodes.tree by default) are aligned using Nucmer against a given database. The corresponding protein genome files are the genomes that will be annotated.", metavar="logical"),
-  make_option(c("--skip_consensus"), type="logical", default=FALSE,
-              help="If TRUE, eggNOG-mapper creates the annotation files but a consensus file is not made. Default: FALSE.", metavar="logical"),
   make_option(c("-g", "--genomes"), type="character", default=NULL,
-              help="File containing the list of genomes to annotate. This input is only used when skip_alignment is TRUE (default).", metavar="character"),
+              help="File containing the list of genomes to annotate. The format may be the following:\n\tRS_GCF_000281895.1\n\tRS_GCF_900100495.1\n\tRS_GCF_900104015.1\n\t(...)", metavar="character"),
   make_option(c("-n", "--nodes"), type="character", default=NULL,
               help="Node input information text file name (e.g. 'my_node_data.txt'). The file needs to have the following format:\n\t\tNode35562	k__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Enterobacteriales;f__Enterobacteriaceae;\n\t\tNode27828	k__Bacteria;p__Proteobacteria\nThe taxonomy must include at least two fields, with the second one being the phylum.", metavar="character"),
+  make_option(c("--skip_consensus"), type="logical", default=FALSE,
+              help="If TRUE, eggNOG-mapper creates the annotation files but a consensus file is not made. Default: FALSE.", metavar="logical"),
   make_option(c("-m", "--medium"), type="character", default="M9",
               help="medium (e.g. 'M9', 'M9[glc]'", metavar="character"),
   make_option(c("--outputdir"), type="character", default="./annotate_results",
@@ -36,36 +34,36 @@ option_list <- list(
   make_option(c("--mediadb"), type="character", default=paste0(home,"/my_media.tsv"),
               help="media database file name", metavar="character"),
   make_option(c("-c", "--checking"), type="logical", default=FALSE,
-              help="TRUE or FALSE (default). If TRUE, generated and analysed models are limited to those pairs of species that are co-ocurring in pairs in one or more samples of a specified experiment.", metavar="logical"),
+              help="TRUE or FALSE (default). If TRUE, annotated genomes are limited to those pairs of species that are co-ocurring in pairs in one or more samples of a specified experiment. Only applicable when input is --nodes.", metavar="logical"),
   make_option(c("-e", "--experiment"), type="character", default=NULL,
-              help="Experiment input information text file name (e.g. 'table.from_biom.tsv'). The tab-separated file needs to have the following format:\n\t\t#OTU ID\tS1\tS2\tS3\t(...)\n\t\tO1\t000000\t000001\t000002\t(...) ", metavar="character"),
+              help="Experiment input information text file name (e.g. 'table.from_biom.tsv'). Only needed when input is --nodes and --checking is TRUE. The tab-separated file needs to have the following format:\n\t\t#OTU ID\tS1\tS2\tS3\t(...)\n\t\tO1\t000000\t000001\t000002\t(...) ", metavar="character"),
   make_option(c("--nucmer"), type="character", default=paste0(home,"/MUMmer3.23/nucmer"),
-              help="Path to the nucmer executable (e.g. './MUMmer3.23/nucmer', '~/my_apps/nucmer'.", metavar="character"),
+              help="Path to the Nucmer executable (e.g. './MUMmer3.23/nucmer', '~/my_apps/nucmer'). Only needed when input is --nodes.", metavar="character"),
   make_option(c("--showcoords"), type="character", default=paste0(home,"/MUMmer3.23/show-coords"),
-              help="Path to the show-coords executable (e.g. './MUMmer3.23/show-coords', '~/my_apps/show_coords'.", metavar="character"),
+              help="Path to the show-coords executable (e.g. './MUMmer3.23/show-coords', '~/my_apps/show_coords'). Only needed when input is --nodes.", metavar="character"),
   make_option(c("--emapper_path"), type="character", default=paste0(home,"/eggnog-mapper-master/emapper.py"),
               help="Path to the emapper.py executable file (e.g. './eggnog-mapper-my_version/emapper.py').",metavar="character"),
   make_option(c("--tree"), type="character", default=paste0(home,"/99_otus_nodes.tree"),
-              help="16S phylogenetic tree file name. The node names of the trees should be modified, and a genuine name should be given for all. This could be done for example using R with the function 'makeNodeLabel' from 'ape' package. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
+              help="16S phylogenetic tree file name. Only needed when input is --nodes. The node names of the trees should be modified, and a genuine name should be given for all. This could be done for example using R with the function 'makeNodeLabel' from 'ape' package. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
   make_option(c("--fasta"), type="character", default=paste0(home,"/99_otus.fasta"),
-              help="16S sequences to be analyzed in multifasta format. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
+              help="16S sequences of all the leaves of the tree, in multifasta format. Only needed when input is --nodes. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
   make_option(c("--db16s"), type="character", default=paste0(home,"/bac120_ssu_reps_r95.fna"),
-              help="16S sequences database. Nucmer will align the tree leaves' 16S sequences to this database. Default is './bac120_ssu_reps_r95.fna' (from GTDB https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/).", metavar="character"),
+              help="16S sequences database. Only needed when input is --nodes. Nucmer will align the tree leaves' 16S sequences to this database. Default is './bac120_ssu_reps_r95.fna' (from GTDB https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/).", metavar="character"),
   make_option(c("--dbproteins"), type="character", default=paste0(home,"/protein_faa_reps/bacteria/"),
-              help="Aminoacid sequences database. CarveMe will take files from here that correspond to Nucmer hits and create SBML models from those files. Default is 'protein_faa_reps/bacteria/' (from GTDB https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/).", metavar="character"),
+              help="Aminoacid sequences database. EggNOG-mapper will annotate files from here. Default is 'protein_faa_reps/bacteria/' (from GTDB https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/).", metavar="character"),
   make_option(c("--dmnd_db"), type="character", default=NULL,
               help="Path to a custom Diamond database. Specially useful when using a Diamond version different from the eggNOG-mapper one, such as the one created with create_compatible_database.R.", metavar="character"),
   make_option(c("--cores"), type="numeric", default=4,
               help="Number of cores to use in parallelization processes (mclapply). Default: 4.", metavar="numeric"))
 
-parser <- OptionParser(option_list=option_list)
+parser <- OptionParser(option_list=option_list, usage = "Desktop/TFM/annotate.R [options]\n\nThe main input data is either --genomes or --nodes")
 opt <- parse_args(parser)
 
 cores <- opt$cores
 skip_consensus <- opt$skip_consensus
-skip_alignment <- opt$skip_alignment 
-if (skip_alignment == FALSE) {
-  stop("The Nucmer alignment functionality is not yet available.")
+
+if (!is.null(opt$nodes) && is.null(opt$genomes)) {
+  skip_alignment <- FALSE
   t <- read.table(opt$nodes,sep = "\t")
   nodos      <- levels(t[[1]])
   taxonom    <- levels(t[[2]])
@@ -82,13 +80,14 @@ if (skip_alignment == FALSE) {
     exp = opt$experiment
   }
 
-} else {
-  if (is.null(opt$genomes)) {
-    stop("Please provide a file with the list of genomes to annotate")
-  } else {
-    genomes <- opt$genomes # TODO como puedo hacer que sea capaz de coger una lista, como por ej poniendo "Nodo*" y que coja varias carpetas?
-    }
-  }
+} else if (is.null(opt$nodes) && !is.null(opt$genomes)) {
+  skip_alignment=TRUE
+  
+} else if (is.null(opt$nodes) && is.null(opt$genomes)) {
+  stop("Please provide an input file. It may be either a list of genomes to annotate or a node data file.")
+
+} else { # both --genomes and --nodes were provided
+  stop("Only one kind of input (--genomes or --nodes) can be provided")}
 
 # Annotation variables
 outputdir         <- opt$outputdir
@@ -122,12 +121,12 @@ if (skip_alignment == TRUE) {
   
   #  Fabricar modelo con CarveMe 
   # -----------------------------
-  # TODO en este caso no podemos leer la taxonomía, pero podríamos pedirla al user o permitirle que indique gram u otros argumentos de carveme...
+  # TODO input taxonomy for -g?
     system(paste0("carve --egg ",outputname,".tsv -o ",outputdir,"/",outputname,".xml"))
   
   }
   
-# TODO reconsider esto de abajo: meto esta funcionalidad?
+
 } else {
   
   #   Obtener secuencias 16S para todas las hojas de ambos nodos  
@@ -146,7 +145,7 @@ if (skip_alignment == TRUE) {
   genomes=list()
   for (i in c(1:length(nodos))) {
     filepath   <- paste("models/",nodos[i],"/",sep="")
-    system(paste("mkdir", filepath))
+    system(paste("mkdir", filepath)) 
 
     #    Alineamiento con Nucmer    
     # ------------------------------
@@ -157,6 +156,7 @@ if (skip_alignment == TRUE) {
     # ------------------------------------------------------------
     node_outputdir  <- paste0(outputdir,"/",nodos[i])
     node_outputname <- paste0(outputname,"_",nodos[i])
+    # En esta(s) carpeta(s) se guardará la lista de los nombres de los genomas obtenidos por Nucmer
     system(paste0("mkdir ",node_outputdir))
     
     annotate(genomes[[i]], node_outputdir, db_protein_folder, emapper_path, cores)

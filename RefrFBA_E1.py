@@ -3,7 +3,7 @@
 """
 Created on Fri Dec  4 12:24:06 2020
 
-@author: urihs
+@author: Silvia Talavera Marcos
 """
 
 from reframed import load_cbmodel
@@ -37,7 +37,7 @@ for medium in models.keys():
     # medio = "LB"
     init_env = Environment.from_compounds(media_db[medio])
     print("\nMedio: "+medio+"\nNodos de: "+medium+"\n==============")
-    media = 0 # !!!
+    media = 0
     listofkeys = list(models[medium].keys())
     listofkeys.sort()
     for node in listofkeys:
@@ -61,7 +61,7 @@ for medium in models.keys():
         except:
             pass
     try:
-        print("RATIO : ",media_prev/media) # es E/P para leu y P/E para cit y glc
+        print("RATIO : ",media_prev/media)
     except:
         pass
 

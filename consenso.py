@@ -3,7 +3,7 @@
 """
 Created on Thu Nov 19 11:42:54 2020
 
-@author: urihs
+@author: Silvia Talavera Marcos
 """
 
 import os
@@ -11,11 +11,12 @@ import sys
 import xml.etree.ElementTree as ET
 import time, datetime
 
-start = time.time() # para devolver al final el tiempo de ejecución
+start = time.time()
 # =============================================================================
 # Leer todos los modelos
 # =============================================================================
 # INPUT: consenso.py input_folder output_folder outputname
+# The models should not be gap-filled, as this modifies the fields
 wd = sys.argv[1] 
 os.chdir(wd)
 
@@ -34,14 +35,12 @@ for filename in os.listdir(wd):
     if ".xml" in filename:
         models.append(filename)
 
-# !!! necesito mirar campos distintos si es gapfilled. La reacción de crecimiento 
-        # también es distinta. Por ahora NO SIRVE SI ES GAPFILLED.
+
 # =============================================================================
 # Preparar el formato SBML
 # =============================================================================
 ET.register_namespace('', "http://www.sbml.org/sbml/level3/version1/core")
 ET.register_namespace('fbc',"http://www.sbml.org/sbml/level3/version1/fbc/version2")
-# !!! quizá estaría bien generalizar esto
 
 # =============================================================================
 # Crear el "esqueleto" de nuestro modelo consenso. Usamos un modelo cualquiera.
@@ -57,11 +56,6 @@ except:
     raise(SystemExit(0))
 
 # =============================================================================
-# for child in root:
-#     for grandchild in child:
-#         print(grandchild.tag, grandchild.attrib)
-#
-#
 # # {http://www.sbml.org/sbml/level3/version1/core}notes {}
 #         # este es root[0][0] 
 # # {http://www.sbml.org/sbml/level3/version1/core}listOfCompartments {}
@@ -71,15 +65,8 @@ except:
 # # {http://www.sbml.org/sbml/level3/version1/core}listOfReactions {}
 # # {http://www.sbml.org/sbml/level3/version1/fbc/version2}listOfObjectives {'{http://www.sbml.org/sbml/level3/version1/fbc/version2}activeObjective': 'objective'}
 # # {http://www.sbml.org/sbml/level3/version1/fbc/version2}listOfGeneProducts {}
-# 
-# Nos quedamos con los campos 0 (modificado), 1, 3 y 5 del first_model
-# El 6 sí lo cambiamos porque hay algunas reacciones que incluyen estas 
-# anotaciones. Así pues, igual que las reacciones nos hacen seleccionar 
-# reactivos, también nos hacen seleccionar geneproducts. (https://www.researchgate.net/publication/292228111_SBML_Level_3_Package_Flux_Balance_Constraints_'fbc')
-# Después, tenemos que ir añadiendo Y seleccionando 2, 4 y 6
 # =============================================================================
-# ??? preguntarle a daniel si opina lo mismo del campo 6
-    
+
 
 # =============================================================================
 # Hacer un conteo de cuántas veces aparece cada elemento en todos los
@@ -98,23 +85,20 @@ conteo = [{},{},{}]
 # Los ID de cada elemento tienen diferente nombre según el campo
 ID = ['id', 'id', '{http://www.sbml.org/sbml/level3/version1/fbc/version2}id']
 
-
 # Inauguramos esta lista con el primer modelo
 for n, campo in enumerate([2, 4, 6]):
     conteo[n] = {cons_root[0][campo][e].attrib[ID[n]]:1 for e in range(len(cons_root[0][campo]))}
-    # <dicci>   <------------key-------------------><1>
+    # <dicci>   <------------key-------------------->
 del(first_model)
 
 # Vamos abriendo los demás modelos y contando
-# Guardamos los elementos de los campos 2 y 4 que no estaban ya
+# Guardamos los elementos de los campos 2, 4 y 6 que no estaban ya
 for m in models[1:]:
     model = ET.parse(m)
-    # ??? iterparse? mirar y tal
     model_root = model.getroot()
     # dejamos aparte la función de crecimiento
-    # ??? hacer esto más bonito?
     growth.append(model_root[0][4][-2])
-    model_root[0][4].remove (model_root[0][4][-2])
+    model_root[0][4].remove(model_root[0][4][-2])
 
     for n, campo in enumerate([2, 4, 6]):
         for e in range(len(model_root[0][campo])):
@@ -129,7 +113,6 @@ for m in models[1:]:
     del(model) # !!! haciendo esto borro en memoria
     del(model_root)
 
-# !!! probar varios threshold (90%, 80%)
 # Filtro y elimino las entradas que están en menos de un 80% de modelos:
 total = len(models)
 for n, campo in enumerate([2,4,6]):
