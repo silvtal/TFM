@@ -30,7 +30,7 @@ carve = function(line, taxonom, outputpath, db_protein_folder) {
 
 
 
-smetana = function(pair, modelfilepath="models/", output, coupling=TRUE, output_coupling=NULL, generated_pairs_filename="generated_pairs.txt") {
+smetana = function(pair, modelfilepath="models/", nodes, medium, mediadb, output, coupling=TRUE, output_coupling=NULL, generated_pairs_filename="generated_pairs.txt") {
   # Dado un string del tipo <hoja1> <hoja2>, lanza smetana para las hojas dadas,
   # si existen sus archivos. Si no existe alguno de los dos archivos o ninguno, 
   # devuelve sus nombres. Si coupling==TRUE, se computan también los análisis sin

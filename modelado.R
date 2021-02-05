@@ -167,7 +167,7 @@ if (run_smetana == TRUE) {
   
   pairs <- as.data.frame(t(pairs)) # preparamos la matriz para el siguiente paso
   failed_pairs <- mcmapply(pairs, FUN=function(z) {
-    smetana(z, modelfilepath = "models/", output=output, 
+    smetana(z, modelfilepath = "models/", nodes=nodos, medium=medium, mediadb=mediadb, output=output, 
                         coupling=coupling, output_coupling=output_coupling, 
                         generated_pairs_filename=generated_pairs_filename)
     }, mc.cores=cores)
