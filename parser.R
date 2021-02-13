@@ -49,14 +49,14 @@ if (is.global){
   
   dataset    <- do.call("rbind", mclapply(filenames, FUN=function(filename)  {
       df <- read.table(filename, sep="\t", header=TRUE, na.strings = "n/a")
-      rownames(df) <- tail(strsplit(filename,split="/")[[1]],n=1) # TODO fix this
+      rownames(df) <- tail(strsplit(filename,split="/")[[1]],n=1)
       return(df)
     } ,mc.cores=cores))
   
   # Report MRO=n/a files
   # ====================
   mro.is.na <- as.logical(is.na(dataset["mro"]))
-  row_names  <- list.files(global, pattern="*.tsv", full.names=FALSE)
+  row_names  <- filenames
   not_growing <- row_names[mro.is.na]
   
   #  MRO values  
@@ -83,7 +83,6 @@ if (is.global){
   
   # Print report
   # ============
-  # TODO open only once?
   write("The following files have n/a MRO and MIP, which means they can't grow by themselves:\n",file=report_name)
   write(not_growing,file=report_name,append=TRUE)
   
@@ -104,13 +103,12 @@ if (is.global){
 } else {
   # Open the data files
   # ===================
-  filenames   <- list.files(detailed, pattern="*.tsv", full.names=TRUE)
+  files_names   <- list.files(detailed, pattern="*.tsv", full.names=TRUE)
   
-  files_text  <- mclapply(filenames, FUN=function(filename)  {
+  files_text  <- mclapply(files_names, FUN=function(filename)  {
     read.csv(filename, sep="\t", header=TRUE)
   } ,mc.cores=cores)
   
-  files_names <- list.files(detailed, pattern="*.tsv", full.names=FALSE)
   names(files_text) <- files_names
   
   
@@ -123,7 +121,7 @@ if (is.global){
   
   # Analyze metabolites
   # ===================
-  merged.files    <- Reduce(f = function(...) merge(...,all=T), files_text)
+  merged.files    <- do.call("rbind",files_text)
   rm(files_text) # free memory
   
   # Create node columns
@@ -133,7 +131,7 @@ if (is.global){
     }
   
   node_1_index    <- unique(sapply(files_names,FUN=function(filename){head(strsplit(filename,split="_")[[1]],n=1)},USE.NAMES = FALSE))
-  
+    
   donor_node      <- sapply(merged.files[,"donor"], check_node, node_1_index, USE.NAMES=FALSE)
   receiver_node   <- sapply(merged.files[,"receiver"],check_node, node_1_index, USE.NAMES=FALSE)
 
@@ -154,7 +152,6 @@ if (is.global){
   
   # Print report
   # ============
-  # TODO open only once?
   write("The following files are empty, which means no exchange between species:\n",file=report_name)
   write(empty,file=report_name,append=TRUE)
   write(paste0("\nThere are ",length(not.empty)," files which are not empty:"),file=report_name,append=TRUE)

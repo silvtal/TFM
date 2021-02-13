@@ -522,6 +522,8 @@ home &lt;- strsplit(paste0(&quot;./&quot;,getopt::get_Rscript_filename()),split=
 home &lt;- paste(home[-length(home)],collapse=&quot;/&quot;)
 source(paste0(home,&quot;/utils.R&quot;)) # cargo las funciones del paquete
 
+
+
 # -------------------------------
 # 1 --&gt; Definiciones preliminares
 # -------------------------------
@@ -555,6 +557,7 @@ option_list &lt;- list(
               help=&quot;If TRUE, runs a Smetana analysis for inter-node pairs. If FALSE, skips the Smetana analysis. Default: TRUE.&quot;, metavar=&quot;logical&quot;),
   make_option(c(&quot;--cores&quot;), type=&quot;numeric&quot;, default=4,
               help=&quot;Number of cores to use in parallelization processes (mclapply). Default: 4.&quot;, metavar=&quot;numeric&quot;))
+
 
 parser &lt;- OptionParser(option_list=option_list)
 opt &lt;- parse_args(parser)
@@ -615,6 +618,7 @@ if (checking == TRUE) {
   # De cada hoja que pase el checking, tomo la secuencia de 16S del fasta original.
   # Son todas las hojas de cada nodo que pasan cualquiera de los dos checkings.
   checked_tipl &lt;- list(levels(filtered_pairs[,1]),levels(filtered_pairs[,2]))
+  
   nodos_16S    &lt;- mclapply(checked_tipl, function(n) {fasta[n]},mc.cores=cores)
   } else {
     # De cada hoja (sin checking), cojo la secuencia de 16S del fasta original
@@ -668,8 +672,8 @@ if (run_smetana == TRUE) {
     system(paste0(&quot;mkdir &quot;,output_coupling,&quot;global&quot;))
     system(paste0(&quot;mkdir &quot;,output_coupling,&quot;detailed&quot;))
   } else {
-    output_coupling = NULL
-  }
+    output_coupling = NULL}
+  
   #~~~~~~~~~~~~~~~~~
   generated_pairs_filename = &quot;generated_pairs.txt&quot;
   dump &lt;- file.create(paste0(output,generated_pairs_filename)) # vaciamos el archivo, de existir, o lo creamos si no existe
@@ -766,6 +770,7 @@ option_list &lt;- list(
   make_option(c(&quot;--skip_consensus&quot;), type=&quot;logical&quot;, default=FALSE,
               help=&quot;If TRUE, eggNOG-mapper creates the annotation files but a consensus file is not made. Default: FALSE.&quot;, metavar=&quot;logical&quot;),
   make_option(c(&quot;-m&quot;, &quot;--medium&quot;), type=&quot;character&quot;, default=&quot;M9&quot;,
+              
               help=&quot;medium (e.g. 'M9', 'M9[glc]'&quot;, metavar=&quot;character&quot;),
   make_option(c(&quot;--outputdir&quot;), type=&quot;character&quot;, default=&quot;./annotate_results&quot;,
               help=&quot;output directory for annotation files and the consensus model(s)&quot;, metavar=&quot;character&quot;),
@@ -797,6 +802,7 @@ option_list &lt;- list(
               help=&quot;Number of cores to use in parallelization processes (mclapply). Default: 4.&quot;, metavar=&quot;numeric&quot;))
 
 parser &lt;- OptionParser(option_list=option_list, usage = &quot;Desktop/TFM/annotate.R [options]\n\nThe main input data is either --genomes or --nodes&quot;)
+
 opt &lt;- parse_args(parser)
 
 cores &lt;- opt$cores
@@ -853,6 +859,8 @@ if (skip_alignment == TRUE) {
   # ------------------------------------------------------------
   annotate(genomes, outputdir, db_protein_folder, emapper_path, cores)
   system(paste0(&quot;rm &quot;,outputdir,&quot;/*seed_orthologs&quot;))  
+  
+  
   
   #   Crear genoma consenso   
   # --------------------------
@@ -1100,7 +1108,9 @@ emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_p
                             &quot;.emapper.seed_orthologs -o &quot;,outputname,&quot; --output_dir &quot;,outputdir,&quot; --override&quot;))
   if (returned != 0) {
     stop(&quot;eggNOG-mapper returned non-zero status. If your Diamond version is different from the eggNOG-mapper one 
-         (e.g. the CarveMe version is in the PATH) please create a new database with create_compatible_database.R 
+         (e.g. the CarveMe version is in the PATH) please create a new database with 
+         
+         create_compatible_database.R 
          and select it with --dmnd_db when next running annotate.R&quot;)
   }
 }
@@ -1207,6 +1217,8 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
   system(paste(&quot;sort -r -k13,13 -k7,7 &quot;, # ordeno por query y por %ID
                filepath,&quot;nucmer_temp1 &gt; &quot;,
                filepath,&quot;nucmer_temp2&quot;,sep=&quot;&quot;))
+  
+  
   system(paste(&quot;awk -F ' ' -v q='' '{if ($13!=q) {q=$13; print}}' &quot;, # escojo los mejores resultados
                filepath,&quot;nucmer_temp2 &gt;&gt;&quot;,
                filepath,&quot;nucmer_filtered&quot;,sep=&quot;&quot;)) #guardo
@@ -1378,7 +1390,6 @@ from carveme.reconstruction.utils import load_media_db
 import statistics as stats
 import pandas as pd
 
-
 wd = &quot;/home/urihs/Desktop/TFM_private/08_reframed/sin_gapfill/&quot;
 
 
@@ -1488,15 +1499,18 @@ if (is.global){
   
   dataset    &lt;- do.call(&quot;rbind&quot;, mclapply(filenames, FUN=function(filename)  {
       df &lt;- read.table(filename, sep=&quot;\t&quot;, header=TRUE, na.strings = &quot;n/a&quot;)
-      rownames(df) &lt;- tail(strsplit(filename,split=&quot;/&quot;)[[1]],n=1) # TODO fix this
+      rownames(df) &lt;- tail(strsplit(filename,split=&quot;/&quot;)[[1]],n=1)
       return(df)
     } ,mc.cores=cores))
+  
   
   # Report MRO=n/a files
   # ====================
   mro.is.na &lt;- as.logical(is.na(dataset[&quot;mro&quot;]))
-  row_names  &lt;- list.files(global, pattern=&quot;*.tsv&quot;, full.names=FALSE)
+  
+  row_names  &lt;- filenames
   not_growing &lt;- row_names[mro.is.na]
+  
   
   #  MRO values  
   # =============
@@ -1520,9 +1534,9 @@ if (is.global){
   min_mip  &lt;-  min(mip.is.not.na[,&quot;mip&quot;])
   max_mip  &lt;-  max(mip.is.not.na[,&quot;mip&quot;])
   
+  
   # Print report
   # ============
-  # TODO open only once?
   write(&quot;The following files have n/a MRO and MIP, which means they can't grow by themselves:\n&quot;,file=report_name)
   write(not_growing,file=report_name,append=TRUE)
   
@@ -1543,13 +1557,12 @@ if (is.global){
 } else {
   # Open the data files
   # ===================
-  filenames   &lt;- list.files(detailed, pattern=&quot;*.tsv&quot;, full.names=TRUE)
+  files_names   &lt;- list.files(detailed, pattern=&quot;*.tsv&quot;, full.names=TRUE)
   
-  files_text  &lt;- mclapply(filenames, FUN=function(filename)  {
+  files_text  &lt;- mclapply(files_names, FUN=function(filename)  {
     read.csv(filename, sep=&quot;\t&quot;, header=TRUE)
   } ,mc.cores=cores)
   
-  files_names &lt;- list.files(detailed, pattern=&quot;*.tsv&quot;, full.names=FALSE)
   names(files_text) &lt;- files_names
   
   
@@ -1560,10 +1573,12 @@ if (is.global){
   empty     &lt;- files_names[is.empty]
   not.empty &lt;- files_names[!is.empty]
   
+  
   # Analyze metabolites
   # ===================
-  merged.files    &lt;- Reduce(f = function(...) merge(...,all=T), files_text)
+  merged.files    &lt;- do.call(&quot;rbind&quot;, files_text)
   rm(files_text) # free memory
+  
   
   # Create node columns
   check_node      &lt;- function(x,node_1_index,tags=c(&quot;first&quot;,&quot;second&quot;)){
@@ -1593,7 +1608,6 @@ if (is.global){
   
   # Print report
   # ============
-  # TODO open only once?
   write(&quot;The following files are empty, which means no exchange between species:\n&quot;,file=report_name)
   write(empty,file=report_name,append=TRUE)
   write(paste0(&quot;\nThere are &quot;,length(not.empty),&quot; files which are not empty:&quot;),file=report_name,append=TRUE)
@@ -1601,6 +1615,7 @@ if (is.global){
   
   write(&quot;\n10 most exchanged metabolites:&quot;,file=report_name,append=TRUE)
   write.table(all.metabolites[1:10,],file=report_name,append=TRUE,quote=FALSE,sep=&quot;\t&quot;,row.names=FALSE)
+  
   write(&quot;\n10 most exchanged metabolites by donor node:&quot;,file=report_name,append=TRUE)
   write.table(all.metabolites.by.node[1:10,],file=report_name,append=TRUE,quote=FALSE,sep=&quot;\t&quot;,row.names=FALSE)
   write(&quot;\n'first' node includes &quot;,file=report_name,append=TRUE)
@@ -1682,6 +1697,7 @@ try:
     cons_root[0][0][0][0].text = 'Description: This model is a consensus model from SBML FBC2 CarveMe output'
 except:
     print(&quot;No se ha podido cargar ningún modelo.&quot;)
+    
     raise(SystemExit(0))
 
 # =============================================================================
@@ -1822,6 +1838,8 @@ if len(sys.argv) &gt; 2:
             perc = 0.80
     else:
         outputname = wd.split(&quot;/&quot;)[-1]
+        
+        
 else:
     outputdir = wd
 
@@ -1877,6 +1895,8 @@ for model in models[1:]:
             old_score = all_reactions.at[reac2idx[reaction],&quot;score&quot;]
             new_score = ( old_score *(conteo[reaction]-1) + df_row[&quot;score&quot;] ) /conteo[reaction]
             all_reactions.at[reac2idx[reaction],&quot;score&quot;] = new_score # actualizar
+            
+            
     # cerramos el modelo (lo quitamos de memoria)
     del(open_model)
     
