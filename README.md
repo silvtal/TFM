@@ -1,6 +1,12 @@
 # TFM
 Este repositorio recoge los *scripts* desarrollados para automatizar los análisis correspondientes al Trabajo de Fin de Máster "Modelización metabólica de comunidades microbianas estables crecidas con fuentes de carbono y energía únicas y simples" (Silvia Talavera Marcos, Máster en Bioinformática y Biología Computacional, Universidad Autónoma de Madrid).
 
+## Esquema general del _pipeline_ propuesto
+
+![](https://github.com/urihs/TFM/blob/master/Anexo/Esquema.png)
+
+## Descripción de los _scripts_
+
 **modelado.R** incluye el alineamiento con Nucmer, la creación de modelos con CarveMe y (opcionalmente) el análisis con Smetana para una pareja de nodos dada.
 
 **annotate.R** se encarga de la anotación funcional con eggNOG-mapper y, opcionalmente, la creación de un modelo consenso. También es capaz de llamar a Nucmer para iniciar el proceso desde el principio. **create_compatible_database.R** es un _script_ adicional que genera una base de datos compatible con la versión de Diamond que sea utilizada automáticamente por eggNOG-mapper desde _annotate.R_.
