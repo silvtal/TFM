@@ -11,84 +11,6 @@ nucmer <- function(nucmer_path, db_16S, fasta_16S) {
 
 
 
-carve = function(line, taxonom, outputpath, db_protein_folder) {
-  # Dado un string del tipo "<ID de hoja> <ID de genoma anotado>", crea un
-  # modelo metabólico de dicha hoja a partir del archivo correspondiente al
-  # genoma dado.
-  leaf = strsplit(line, split=" ")[[1]][1]
-  file = strsplit(line, split=" ")[[1]][2]
-  outf = paste0(outputpath,leaf,".xml")
-  if (file.exists(outf)) {
-    print(paste0(outf," model already exists. Moving to the next one..."))
-  } else {
-    system(paste0("carve ",db_protein_folder,file,"_protein.faa ",
-                  gram(taxonom)," -o ",outf)) # nombres de archivo = nombre de hoja
-    print(paste0(outf," model created"))
-  }
-}
-
-
-
-
-smetana = function(pair, modelfilepath="models/", nodes, medium, mediadb, output, coupling=TRUE, output_coupling=NULL, generated_pairs_filename="generated_pairs.txt") {
-  # Dado un string del tipo <hoja1> <hoja2>, lanza smetana para las hojas dadas,
-  # si existen sus archivos. Si no existe alguno de los dos archivos o ninguno, 
-  # devuelve sus nombres. Si coupling==TRUE, se computan también los análisis sin
-  # la opción de smetana "--no-coupling".
-  # File creation
-  if (coupling==TRUE & is.null(output_coupling)) {
-    stop("A output name for the coupling results must be specified.")
-  }
-  filepath1 = paste0(modelfilepath,nodos[1],"/") 
-  filepath2 = paste0(modelfilepath,nodos[2],"/") 
-  m1 = pair[[1]]
-  m2 = pair[[2]]
-  if (file_test("-f",paste0(filepath1,m1,".xml")) & file_test("-f",paste0(filepath2,m2,".xml"))) {
-    for (i in c("global","detailed")){
-      output_filename=paste0(output,i,"/",m1,"_",m2,"_",medium)
-      if (!file.exists(paste0(output_filename,"_",i,".tsv"))) { #solo crea el archivo si no existía ya
-        print(paste0("Creating report ",output_filename,"_",i,"..."))
-        system(paste0("smetana --",i," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
-                      " --mediadb ",mediadb," --molweight --no-coupling -o ",output_filename))
-        write(paste(m1,m2),file=paste0(output, generated_pairs_filename),append=TRUE) # lista de parejas que se han analizado con Smetana
-      } else {
-        print(paste0(output_filename,"_",i,".tsv already exists. Moving to the next pair..."))
-      }
-    }
-    if (coupling==TRUE) {  # se hace una ejecución más, pero solo para detailed.
-      output_filename_c=paste0(output_coupling,i,"/",m1,"_",m2,"_",medium)
-      if (!file.exists(paste0(output_filename,"_",i,".tsv"))) { #solo crea el archivo si no existía ya
-        print(paste0("Creating report ",output_filename,"_",i,"..."))
-        system(paste0("smetana --detailed"," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
-                      " --mediadb ",mediadb," --molweight -o ",output_filename_c))
-      } else {
-        print(paste0(output_filename_c,"_detailed.tsv already exists. Moving to the next pair..."))
-      }
-    }
-  } else {
-    return(pair) # se devuelve 
-  }
-}
-
-
-
-
-emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_path, cores) {
-  system(paste0(emapper_path," -m diamond --cpu ",cores," --no_annot --no_file_comments -i ",
-                db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",
-                outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
-  returned <- system(paste0(emapper_path," --annotate_hits_table ",outputdir,"/",outputname,
-                            ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir," --override"))
-  if (returned != 0) {
-    stop("eggNOG-mapper returned non-zero status. If your Diamond version is different from the eggNOG-mapper one 
-         (e.g. the CarveMe version is in the PATH) please create a new database with create_compatible_database.R 
-         and select it with --dmnd_db when next running annotate.R")
-  }
-}
-
-
-
-
 check = function(nodos, exp, cores=4) {
   # Dada una pareja de nodos ("nodos", formato ape::phylo) y la ruta de un archivo con
   # datos experimentales ("exp"), determina y devuelve las combinaciones de OTUs 
@@ -96,7 +18,7 @@ check = function(nodos, exp, cores=4) {
   exp = read.csv(exp,sep="\t",skip = 1,row.names=1)
   
   # Seleccionamos solo las hojas que estaban en el experimento, para agilizar el proceso
-  lista_nodos <- mclapply(nodos, function(nodo) {nodo$tip.label[nodo$tip.label %in% rownames(exp)]},mc.cores=cores)
+  lista_nodos <- mclapply(nodos, function(nodo) { nodo$tip.label[nodo$tip.label %in% rownames(exp)]},mc.cores=cores)
   
   # Obtengo todas las combinaciones de hojas para cada nodo
   pairs = expand.grid(lista_nodos[[1]], lista_nodos[[2]], KEEP.OUT.ATTRS = F)
@@ -115,6 +37,24 @@ check = function(nodos, exp, cores=4) {
 
 
 
+check_intra = function(nodos, exp) {
+  # Dada una pareja de nodos ("nodos", formato ape::phylo) y la ruta de un archivo con
+  # datos experimentales ("exp"), determina y devuelve las combinaciones de OTUs 
+  # intra-nodo que coinciden en una misma muestra experimental
+  exp = read.csv(exp,sep="\t",skip = 1,row.names=1)
+  
+  # Seleccionamos solo las hojas que estaban en el experimento, para agilizar el proceso
+  lista_nodos <- lapply(nodos, function(nodo) { nodo$tip.label[nodo$tip.label %in% rownames(exp)]} )
+  
+  # Obtengo todas las combinaciones de hojas para cada nodo
+  pairs1 = expand.grid(lista_nodos[[1]], lista_nodos[[1]], KEEP.OUT.ATTRS = F)
+  pairs2 = expand.grid(lista_nodos[[2]], lista_nodos[[2]], KEEP.OUT.ATTRS = F)
+  
+  filtered_pairs  = list(pairs1,pairs2)
+  return(filtered_pairs)
+  }
+
+
 
 gram  = function(taxonom, gramneg = "gramneg.csv", grampos = "grampos.csv") {
   # Dado un string con la taxonomía en formato GreenGenes, devuelve si es 
@@ -124,17 +64,79 @@ gram  = function(taxonom, gramneg = "gramneg.csv", grampos = "grampos.csv") {
   gramneg <- levels(read.table(gramnegpath)[[1]])
   grampos <- levels(read.table(grampospath)[[1]])
   
-  if (phylum %in% gramneg) {
-    result <- "-u gramneg"
+  if (phylum %in% gramneg) { #FIXTHIS
+    result <- "--verbose -u gramneg -g M9[cit] --mediadb ../my_media.tsv"
   }
   else if (phylum %in% grampos) {
-    result <- "-u grampos"
+    result <- "--verbose -u grampos -g M9[cit] --mediadb ../my_media.tsv"
   }
   else {
     result <- ""
   }
   return(result)
 }
+
+
+
+
+carve = function(line, taxonom, outputpath, db_protein_folder) {
+  # Dado un string del tipo "<ID de hoja> <ID de genoma anotado>", crea un
+  # modelo metabólico de dicha hoja a partir del archivo correspondiente al
+  # genoma dado.
+  leaf = strsplit(line, split=" ")[[1]][1]
+  file = strsplit(line, split=" ")[[1]][2]
+  outf = paste0(outputpath,leaf,".xml")
+  if (file.exists(outf)) {
+    print(paste0(outf," model already exists. Moving to the next one..."))
+  } else {
+    system(paste0("carve ",db_protein_folder,file,"_protein.faa ",
+                gram(taxonom)," -o ",outf)) # nombres de archivo = nombre de hoja
+    print(paste0(outf," model created"))
+  }
+}
+
+
+
+smetana = function(pair, modelfilepath="models/", output, coupling=TRUE, output_coupling=NULL, generated_pairs_filename="generated_
+pairs.txt") {
+  # Dado un string del tipo <hoja1> <hoja2>, lanza smetana para las hojas dadas,
+  # si existen sus archivos. Si no existe alguno de los dos archivos o ninguno, 
+  # devuelve sus nombres. Si coupling==TRUE, se computan también los análisis sin
+  # la opción de smetana "--no-coupling".
+  # File creation
+  if (coupling==TRUE & is.null(output_coupling)) {
+    stop("A output name for the coupling results must be specified.")
+  }
+  filepath1 = paste0(modelfilepath,nodos[1],"/") 
+  filepath2 = paste0(modelfilepath,nodos[2],"/") 
+  m1 = pair[[1]]
+  m2 = pair[[2]]
+  if (file_test("-f",paste0(filepath1,m1,".xml")) & file_test("-f",paste0(filepath2,m2,".xml"))) {
+    for (i in c("global","detailed")){
+      output_filename=paste0(output,i,"/",m1,"_",m2,"_",medium)
+      if (!file.exists(paste0(output_filename,"_",i,".tsv"))) { #solo crea el archivo si no existía ya
+        system(paste0("smetana --",i," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
+                      " --mediadb ",mediadb," --molweight --no-coupling -o ",output_filename))
+        write(paste(m1,m2),file=paste0(output, generated_pairs_filename),append=TRUE) # lista de parejas que se han analizado con Smetana
+      } else {
+        print(paste0(output_filename,"_",i,".tsv already exists. Moving to the next pair..."))
+      }
+    }
+    if (coupling==TRUE) {  # se hace una ejecución más, pero solo para detailed.
+      output_filename_c=paste0(output_coupling,i,"/",m1,"_",m2,"_",medium)
+      if (!file.exists(paste0(output_filename,"_",i,".tsv"))) { #solo crea el archivo si no existía ya
+        system(paste0("smetana --detailed"," ",filepath1,m1,".xml"," ",filepath2,m2,".xml"," --flavor bigg -m ",medium,
+                      " --mediadb ",mediadb," --molweight -o ",output_filename_c))
+      } else {
+        print(paste0(output_filename_c,"_detailed.tsv already exists. Moving to the next pair..."))
+      }
+    }
+  } else {
+    print("estamos aqui!!!!!!!!!!!!!!!")
+    return(pair) # se devuelve 
+  }
+}
+
 
 
 
@@ -209,6 +211,20 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
   return(queries_v_hits)
 } 
 
+
+
+emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_path, cores) {
+  system(paste0(emapper_path," -m diamond --cpu ",cores," --no_annot --no_file_comments -i ",
+                db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",
+                outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
+  returned <- system(paste0(emapper_path," --annotate_hits_table ",outputdir,"/",outputname,
+                ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir," --override"))
+  if (returned != 0) {
+    stop("eggNOG-mapper returned non-zero status. If your Diamond version is different from the eggNOG-mapper one 
+         (e.g. the CarveMe version is in the PATH) please create a new database with create_compatible_database.R 
+         and select it with --dmnd_db when next running annotate.R")
+  }
+}
 
 
 
