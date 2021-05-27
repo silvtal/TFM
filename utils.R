@@ -97,7 +97,7 @@ carve = function(line, taxonom, outputpath, db_protein_folder) {
 
 
 
-smetana = function(pair, modelfilepath="models/", output, coupling=TRUE, output_coupling=NULL, generated_pairs_filename="generated_
+smetana = function(pair, nodos, modelfilepath="models/", output, coupling=TRUE, output_coupling=NULL, generated_pairs_filename="generated_
 pairs.txt") {
   # Dado un string del tipo <hoja1> <hoja2>, lanza smetana para las hojas dadas,
   # si existen sus archivos. Si no existe alguno de los dos archivos o ninguno, 
@@ -243,3 +243,4 @@ annotate = function(genomes, outputdir, db_protein_folder, emapper_path, cores) 
             cores=cores) 
   },mc.cores=cores))
 }
+
