@@ -1,7 +1,7 @@
 # TFM
-**ES**: Este repositorio recoge los *scripts* desarrollados para automatizar los análisis correspondientes al Trabajo de Fin de Máster "Modelización metabólica de comunidades microbianas estables crecidas con fuentes de carbono y energía únicas y simples" (Silvia Talavera Marcos, Máster en Bioinformática y Biología Computacional, Universidad Autónoma de Madrid).
+**ES**: Este repositorio recoge los *scripts* desarrollados para automatizar los análisis correspondientes al Trabajo de Fin de Máster "Modelización metabólica de comunidades microbianas estables crecidas con fuentes de carbono y energía únicas y simples" (Silvia Talavera Marcos, Máster en Bioinformática y Biología Computacional, Universidad Autónoma de Madrid). El trabajo puede descargarse [aquí](http://hdl.handle.net/10486/695123).
 
-**EN**: This repository includes scripts from Master's Thesis "Metabolic modeling of microbial communities grown in simple energy and carbon sources" (Silvia Talavera Marcos, Master's Degree in Bioinformatics and Computational Biology, Autonomous University of Madrid).
+**EN**: This repository includes scripts from Master's Thesis "Metabolic modeling of microbial communities grown in simple energy and carbon sources" (Silvia Talavera Marcos, Master's Degree in Bioinformatics and Computational Biology, Autonomous University of Madrid). The work is downloadable [here](http://hdl.handle.net/10486/695123).
 
 ----------
 
