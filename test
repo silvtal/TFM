@@ -1,0 +1,15 @@
+ modelado.R --nodes datos_nodos_glc.txt \
+ --medium M9[glc]\
+ --mediadb media.tsv \ 
+ --checking TRUE \ 
+ --experiment table.from_biom_0.99_glucosa.txt \ 
+ --coupling FALSE \ 
+ --nucmer ./MUMmer3.23/nucmer \ 
+ --showcoords ./MUMmer3.23/show-coords \ 
+ --tree 99_otus_nodes.tree\ 
+ --fasta 99_otus.fasta \ 
+ --db16s bac120_ssu_reps_r95.fna\ 
+ --dbproteins protein_faa_reps/bacteria \
+ --run_smetana FALSE \ 
+ --cores 16
+ 
