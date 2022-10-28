@@ -1,1 +1,4 @@
 99_otus_nodes.tree
+99_otus.fasta
+protein_faa_reps/*
+models/

@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/usr/bin/csh -f
 #
 # **SEVERELY** antiquated script for running the mummer 1 suite
 # -r option reverse complements the query sequence, coordinates of the reverse
@@ -10,7 +10,7 @@ set qry = $2
 set pfx = $3
 set rev = $4
 
-set bindir = /home/urihs/Desktop/TFM/02_extraccion_especies/MUMmer3.23
+set bindir = /home/silvia/repos/TFM/MUMmer3.23
 
 if($ref == '' || $qry == '' || $pfx == '') then
     echo "USAGE: $0 <fasta reference> <fasta query> <prefix> [-r]"

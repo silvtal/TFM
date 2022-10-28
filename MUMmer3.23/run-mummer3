@@ -1,4 +1,4 @@
-#!/bin/csh -f
+#!/usr/bin/csh -f
 #
 # for running the basic mummer 3 suite, should use nucmer instead when possible
 # to avoid the confusing reverse coordinate system of the raw programs.
@@ -13,7 +13,7 @@ set ref = $1
 set qry = $2
 set pfx = $3
 
-set bindir = /home/urihs/Desktop/TFM/02_extraccion_especies/MUMmer3.23
+set bindir = /home/silvia/repos/TFM/MUMmer3.23
 
 if($ref == '' || $qry == '' || $pfx == '') then
     echo "USAGE: $0 <fasta reference> <multi-fasta query> <prefix>"

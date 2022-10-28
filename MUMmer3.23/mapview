@@ -1,9 +1,9 @@
-#!/usr/bin/perl
+#!/home/silvia/anaconda3/bin/perl
 
-use lib "/home/urihs/Desktop/TFM/02_extraccion_especies/MUMmer3.23/scripts";
+use lib "/home/silvia/repos/TFM/MUMmer3.23/scripts";
 use Foundation;
 
-my $SCRIPT_DIR = "/home/urihs/Desktop/TFM/02_extraccion_especies/MUMmer3.23/scripts";
+my $SCRIPT_DIR = "/home/silvia/repos/TFM/MUMmer3.23/scripts";
 
 
 my $VERSION_INFO = q~

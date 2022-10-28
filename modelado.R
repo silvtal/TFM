@@ -51,8 +51,8 @@ parser <- OptionParser(option_list=option_list)
 opt <- parse_args(parser)
 
 t <- read.table(opt$nodes,sep = "\t")
-nodos      <- levels(t[[1]])
-taxonom    <- levels(t[[2]])
+nodos      <- t[[1]]
+taxonom    <- t[[2]]
 medium     <- opt$medium
 mediadb    <- opt$mediadb
 checking   <- opt$checking
@@ -83,7 +83,7 @@ cores <- opt$cores
 # -----------------------
 if (!require("ape", quietly=TRUE)) BiocManager::install("ape")
 tn = ape::read.tree(tree_file)
-nodos_hojas <- mclapply(nodos, function(nodo) {ape::extract.clade(tn, nodo)}, mc.cores=cores)
+nodos_hojas <- mclapply(nodos, function(nodo) {ape::extract.clade(tn, nodo);}, mc.cores=cores)
 
 # divido el fasta en dos archivos para facilitar su parsing después:
 system(paste0("cat ",otus_fasta_file," | grep '>' > 99_otus_col1"))
@@ -102,7 +102,7 @@ system("rm 99_otus_col*") # elimino archivos temporales
 # Asigno secuencias 16S a cada hoja
 if (checking == TRUE) {
   # Pares de hojas de los dos nodos. INTER-NODO.
-  filtered_pairs <- check(nodos=nodos_hojas, exp=exp,cores=cores) 
+  filtered_pairs <- check(nodos=nodos_hojas, exp=exp, cores=cores) 
   # De cada hoja que pase el checking, tomo la secuencia de 16S del fasta original.
   # Son todas las hojas de cada nodo que pasan cualquiera de los dos checkings.
   checked_tipl <- list(levels(filtered_pairs[,1]),levels(filtered_pairs[,2]))

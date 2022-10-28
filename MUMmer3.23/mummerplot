@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/home/silvia/anaconda3/bin/perl
 
 ################################################################################
 #   Programmer: Adam M Phillippy, The Institute for Genomic Research
@@ -16,13 +16,13 @@
 # 
 ################################################################################
 
-use lib "/home/urihs/Desktop/TFM/02_extraccion_especies/MUMmer3.23/scripts";
+use lib "/home/silvia/repos/TFM/MUMmer3.23/scripts";
 use Foundation;
 use strict;
 use IO::Socket;
 
-my $BIN_DIR = "/home/urihs/Desktop/TFM/02_extraccion_especies/MUMmer3.23";
-my $SCRIPT_DIR = "/home/urihs/Desktop/TFM/02_extraccion_especies/MUMmer3.23/scripts";
+my $BIN_DIR = "/home/silvia/repos/TFM/MUMmer3.23";
+my $SCRIPT_DIR = "/home/silvia/repos/TFM/MUMmer3.23/scripts";
 
 
 #================================================================= Globals ====#
