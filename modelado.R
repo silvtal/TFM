@@ -84,7 +84,15 @@ cores <- opt$cores
 if (!require("ape", quietly=TRUE)) BiocManager::install("ape")
 tn = ape::read.tree(tree_file)
 # TODO insert length warning here and not in check and smetana
-nodos <- mclapply(node_names, function(nodo) {ape::extract.clade(tn, nodo)}, mc.cores=cores)
+nodos <- mclapply(node_names, function(nodo) {
+    if (nodo %in% tn$node.label){
+      return(ape::extract.clade(tn, nodo, collapse.singles = FALSE))
+    } else if (nodo %in% tn$tip.label) {
+      return(list(tip.label=nodo))
+    } else {
+      stop(paste0("Node ", nodo, " could not be found in the given tree"))
+    }
+  }, mc.cores=cores)
 
 # divido el fasta en dos archivos para facilitar su parsing después:
 system(paste0("cat ",otus_fasta_file," | grep '>' > 99_otus_col1"))
