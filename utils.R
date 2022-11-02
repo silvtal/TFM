@@ -10,41 +10,49 @@ nucmer <- function(nucmer_path, db_16S, fasta_16S) {
 
 
 
-
-check = function(nodos, exp, cores=4) {
-  # Dada una pareja de nodos ("nodos", formato ape::phylo) y la ruta de un archivo con
-  # datos experimentales ("exp"), determina y devuelve las combinaciones de OTUs 
-  # inter-nodo que coinciden en una misma muestra experimental
-  exp = read.csv(exp,sep="\t",skip = 1,row.names=1)
+check = function(nodos, abuntable, cutoff = 0, cores=4) {
+  # Dada una pareja de nodos ("nodos", formato ape::phylo) y una tabla de 
+  # abundancias, determina y devuelve las combinaciones de OTUs inter-nodo que
+  # están presentes en una misma muestra experimental.
   
-  # Seleccionamos solo las hojas que estaban en el experimento, para agilizar el proceso
-  lista_nodos <- mclapply(nodos, function(nodo) { nodo$tip.label[nodo$tip.label %in% rownames(exp)]},mc.cores=cores)
+  if (length(nodos) > 2) {
+    warning(paste("The node name list is longer than 2. ", length(nodos)," Only the first two nodes will be checked for coexistence"))
+    nodos <- nodos[1:2]
+  }
+  # Cutoff: minimum abundance necessary for considering an OTU to be "present"
+  # in a given sample
+  
+  # Leo abundancias
+  abuntable <- read.csv(abuntable, sep="\t",skip = 1,row.names=1)
+  abuntable <- abuntable[1:(ncol(abuntable)-1)] # exclude taxonomy column
+  
+  # Seleccionamos solo las hojas que estaban en el experimento
+  lista_nodos <- mclapply(nodos, function(nodo) { nodo$tip.label[nodo$tip.label %in% rownames(abuntable)]},mc.cores=cores)
   
   # Obtengo todas las combinaciones de hojas para cada nodo
   pairs = expand.grid(lista_nodos[[1]], lista_nodos[[2]], KEEP.OUT.ATTRS = F)
   
   # Selecciono las parejas presentes en una misma muestra
-  pairs[,3] = vector(mode="logical",length=length(pairs[,2])) # indicador de si coinciden o no
-  for (muestra in colnames(exp)){
+  pairs[,3] = vector(mode="logical", length=length(pairs[,2])) # indicador de si coinciden o no
+  for (muestra in colnames(abuntable)){
     # anoto qué otus hay en cada muestra
-    otus=rownames(subset(exp[muestra],exp[muestra]!=0))
+    otus=rownames(subset(abuntable[muestra], abuntable[muestra]>cutoff))
     # indico para cada pareja si coinciden en esa muestra o en otra ya comprobada
     pairs[,3] = pairs[,3] | pairs[,1] %in% otus & pairs[,2] %in% otus
   }
-  filtered_pairs  = subset(pairs,pairs[,3]==TRUE)[,0:2]
+  filtered_pairs  = subset(pairs, pairs[,3]==TRUE)[,0:2]
   return(filtered_pairs)
 }
 
-
-
-check_intra = function(nodos, exp) {
+check_intra = function(nodos, abuntable) {
   # Dada una pareja de nodos ("nodos", formato ape::phylo) y la ruta de un archivo con
-  # datos experimentales ("exp"), determina y devuelve las combinaciones de OTUs 
+  # datos experimentales ("abuntable"), determina y devuelve las combinaciones de OTUs 
   # intra-nodo que coinciden en una misma muestra experimental
-  exp = read.csv(exp,sep="\t",skip = 1,row.names=1)
+  abuntable = read.csv(abuntable,sep="\t",skip = 1,row.names=1)
+  abuntable <- abuntable[1:(ncol(abuntable)-1)] # exclude taxonomy column
   
   # Seleccionamos solo las hojas que estaban en el experimento, para agilizar el proceso
-  lista_nodos <- lapply(nodos, function(nodo) { nodo$tip.label[nodo$tip.label %in% rownames(exp)]} )
+  lista_nodos <- lapply(nodos, function(nodo) { nodo$tip.label[nodo$tip.label %in% rownames(abuntable)]} )
   
   # Obtengo todas las combinaciones de hojas para cada nodo
   pairs1 = expand.grid(lista_nodos[[1]], lista_nodos[[1]], KEEP.OUT.ATTRS = F)
@@ -111,6 +119,7 @@ pairs.txt") {
   filepath2 = paste0(modelfilepath,nodos[2],"/") 
   m1 = pair[[1]]
   m2 = pair[[2]]
+  if (length(pair)>2) {warning(paste("The node name list is longer than 2. Only the first two nodes will be analysed with Smetana (", m1, ", ", m2, ")"))}
   if (file_test("-f",paste0(filepath1,m1,".xml")) & file_test("-f",paste0(filepath2,m2,".xml"))) {
     for (i in c("global","detailed")){
       output_filename=paste0(output,i,"/",m1,"_",m2,"_",medium)

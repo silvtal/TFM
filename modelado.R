@@ -26,8 +26,8 @@ option_list <- list(
               help="media database file name", metavar="character"),
   make_option(c("-c", "--checking"), type="logical", default=FALSE,
               help="TRUE or FALSE (default). If TRUE, generated and analysed models are limited to those pairs of species that are co-ocurring in pairs in one or more samples of a specified experiment.", metavar="logical"),
-  make_option(c("-e", "--experiment"), type="character", default=NULL,
-              help="Experiment input information text file name (e.g. 'table.from_biom.tsv'). The tab-separated file needs to have the following format:\n\t\t#OTU ID\tS1\tS2\tS3\t(...)\n\t\tO1\t000000\t000001\t000002\t(...) ", metavar="character"),
+  make_option(c("-a", "--abuntable"), type="character", default=NULL,
+              help="Abundance table text file name (e.g. 'table.from_biom.tsv'). The tab-separated file needs to have the following format:\n\t\t#OTU ID\tS1\tS2\tS3\t(...)\n\t\tO1\t000000\t000001\t000002\t(...) ", metavar="character"),
   make_option(c("--coupling"), type="logical", default=TRUE,
               help="If TRUE, smetana computes an aditional analysis without the --no-coupling option (see smetana help). Default is TRUE.", metavar="logical"),
   make_option(c("--nucmer"), type="character", default=paste0(home,"/MUMmer3.23/nucmer"),
@@ -50,20 +50,20 @@ option_list <- list(
 parser <- OptionParser(option_list=option_list)
 opt <- parse_args(parser)
 
-t <- read.table(opt$nodes,sep = "\t")
-nodos      <- t[[1]]
-taxonom    <- t[[2]]
+tab <- na.omit(read.csv(opt$nodes,sep = "\t"))
+node_names <- tab[[1]]
+taxonom    <- tab[[10]] # for Gram-type checking
 medium     <- opt$medium
 mediadb    <- opt$mediadb
 checking   <- opt$checking
 run_smetana<- opt$run_smetana
 coupling   <- opt$coupling
 
-if (checking==TRUE & is.null(opt$experiment)) {
-  stop("When --checking TRUE, a experiment file must be specified")
-  } else if (checking == TRUE) {
-  exp = opt$experiment
-  }
+if (checking==TRUE & is.null(opt$abuntable)) {
+  stop("When --checking TRUE, a abundance table file must be specified")
+} else if (checking == TRUE) {
+  abuntable = opt$abuntable
+}
 
 nucmer_path     <- opt$nucmer
 showcoords      <- opt$showcoords
@@ -83,7 +83,8 @@ cores <- opt$cores
 # -----------------------
 if (!require("ape", quietly=TRUE)) BiocManager::install("ape")
 tn = ape::read.tree(tree_file)
-nodos_hojas <- mclapply(nodos, function(nodo) {ape::extract.clade(tn, nodo);}, mc.cores=cores)
+# TODO insert length warning here and not in check and smetana
+nodos <- mclapply(node_names, function(nodo) {ape::extract.clade(tn, nodo)}, mc.cores=cores)
 
 # divido el fasta en dos archivos para facilitar su parsing después:
 system(paste0("cat ",otus_fasta_file," | grep '>' > 99_otus_col1"))
@@ -101,22 +102,24 @@ system("rm 99_otus_col*") # elimino archivos temporales
 # ------------------------------------------------
 # Asigno secuencias 16S a cada hoja
 if (checking == TRUE) {
-  # Pares de hojas de los dos nodos. INTER-NODO.
-  filtered_pairs <- check(nodos=nodos_hojas, exp=exp, cores=cores) 
   # De cada hoja que pase el checking, tomo la secuencia de 16S del fasta original.
-  # Son todas las hojas de cada nodo que pasan cualquiera de los dos checkings.
-  checked_tipl <- list(levels(filtered_pairs[,1]),levels(filtered_pairs[,2]))
-  nodos_16S    <- mclapply(checked_tipl, function(n) {fasta[n]},mc.cores=cores)
+  # Son todas las hojas de cada nodo que estén presentes en la tabla de abundancia
+  
+  checked_tipl <- check(nodos = nodos,
+                        cutoff = 0,
+                        abuntable = abuntable,
+                        cores = cores)
+  
+  nodos_16S    <- mclapply(checked_tipl, function(n) {fasta[unique(n)]}, mc.cores=cores)
   } else {
     # De cada hoja (sin checking), cojo la secuencia de 16S del fasta original
-    nodos_16S    <- mclapply(nodos_hojas, function(nodo) {fasta[nodo$tip.label]},mc.cores=cores)
+    nodos_16S    <- mclapply(nodos, function(nodo) {fasta[nodo$tip.label]}, mc.cores=cores)
   }
-
 
 system("mkdir models")
 # Para cada nodo creo una carpeta de resultados
-for (i in c(1:length(nodos))) {
-  filepath   <- paste("models/",nodos[i],"/",sep="")
+for (i in c(1:length(nodos_16S))) {
+  filepath   <- paste("models/",node_names[i],"/",sep="")
   system(paste("mkdir", filepath)) # la carpeta tendrá el mismo nombre que el nodo
 
   # Alineo cada hoja de cada nodo con Nucmer y obtengo un genoma adecuado para cada una,
@@ -124,10 +127,10 @@ for (i in c(1:length(nodos))) {
   nucmer_res_final <- find_alignment_hits(filepath, nodos_16S[[i]], nucmer_path, db_16S, showcoords, cores)
 
   # Modelado con CarveMe de todas las hojas de cada nodo que pasan el filtro de Nucmer
-  print(paste0("Creating models for ",nodos[i],"..."))
+  print(paste0("Creating models for ",node_names[i],"..."))
   dump <- simplify2array(mclapply(nucmer_res_final, 
                                   FUN = function(line) {carve(line, taxonom[i], filepath, db_protein_folder)},mc.cores=cores))
-  print(paste0("Finished modelling for ",nodos[i],"."))
+  print(paste0("Finished modelling for ",node_names[i],"."))
   
   }
 
@@ -138,9 +141,9 @@ for (i in c(1:length(nodos))) {
 if (run_smetana == TRUE) {
   # Definimos la lista de parejas a analizar
   if (checking == TRUE) {
-    pairs <- filtered_pairs
+    pairs <- check(nodo, abunds, cores)
     } else {
-      pairs <- expand.grid(nodos_hojas[[1]]$tip.label, nodos_hojas[[2]]$tip.label, KEEP.OUT.ATTRS = F)
+      pairs <- expand.grid(nodos[[1]]$tip.label, nodos[[2]]$tip.label, KEEP.OUT.ATTRS = F)
     }
   
   # Ejecutamos Smetana para cada pareja inter-nodo de hojas para las que se ha creado
@@ -149,7 +152,7 @@ if (run_smetana == TRUE) {
   # archivo smetana_results/filtered_out_pairs.txt. Incluimos el porcentaje de parejas 
   # que pasan y no pasan el filtro.
   #~~~~~~~~~~~~~~~~~~
-  output = "smetana_results/"
+  output = paste0(node_names[1],"_",node_names[2],"smetana_results/")
   system(paste0("mkdir ",output))
   system(paste0("mkdir ",output,"global"))
   system(paste0("mkdir ",output,"detailed"))
@@ -162,12 +165,12 @@ if (run_smetana == TRUE) {
     output_coupling = NULL
   }
   #~~~~~~~~~~~~~~~~~
-  generated_pairs_filename = "generated_pairs.txt"
+  generated_pairs_filename = paste0(node_names[1],"_",node_names[2],"_pairs.txt")
   dump <- file.create(paste0(output,generated_pairs_filename)) # vaciamos el archivo, de existir, o lo creamos si no existe
   
   # Paralelización con parApply (solo para este paso)
   failed_pairs <- mcmapply(pairs, FUN=function(z) {
-    smetana(z, nodos=nodos, modelfilepath="models/", output=output, 
+    smetana(z, nodos=node_names, modelfilepath="models/", output=output, 
                         coupling=coupling, output_coupling=output_coupling, 
                         generated_pairs_filename=generated_pairs_filename)
     }, mc.cores=cores)
