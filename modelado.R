@@ -19,7 +19,7 @@ source(paste0(home,"/utils.R")) # cargo las funciones del paquete
 
 option_list <- list(
   make_option(c("-n", "--nodes"), type="character", default=NULL,
-              help="Node input information text file name (e.g. 'my_node_data.txt'). The file needs to have the following format:\n\t\tNode35562	k__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Enterobacteriales;f__Enterobacteriaceae;\n\t\tNode27828	k__Bacteria;p__Proteobacteria\nThe taxonomy must include at least two fields, with the second one being the phylum.", metavar="character"),
+              help="Node input information text file name (e.g. 'my_node_data.txt'). The file needs to have at least three columns, that are assumed to be on the 1st, 9th and 10th fields: a 'node name' column (Node35562), a 'leaf list' column (4296486;593890;740825;4322506;4343405;1552835;99357;1697002;1116749;542614;) and a taxonomy column	(k__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Enterobacteriales;f__Enterobacteriaceae)", metavar="character"),
   make_option(c("-m", "--medium"), type="character", default="M9",
               help="medium (e.g. 'M9', 'M9[glc]'", metavar="character"),
   make_option(c("--mediadb"), type="character", default=paste0(home,"/my_media.tsv"),
@@ -34,8 +34,6 @@ option_list <- list(
               help="Path to the nucmer executable (e.g. './MUMmer3.23/nucmer', '~/my_apps/nucmer'.", metavar="character"),
   make_option(c("--showcoords"), type="character", default=paste0(home,"/MUMmer3.23/show-coords"),
               help="Path to the show-coords executable (e.g. './MUMmer3.23/show-coords', '~/my_apps/show_coords'.", metavar="character"),
-  make_option(c("--tree"), type="character", default=paste0(home,"/99_otus_nodes.tree"),
-              help="16S phylogenetic tree file name. The node names of the trees should be modified, and a genuine name should be given for all. This could be done for example using R with the function 'makeNodeLabel' from 'ape' package. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
   make_option(c("--fasta"), type="character", default=paste0(home,"/99_otus.fasta"),
               help="16S sequences to be analyzed in multifasta format. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
   make_option(c("--db16s"), type="character", default=paste0(home,"/bac120_ssu_reps_r95.fna"),
@@ -52,6 +50,7 @@ opt <- parse_args(parser)
 
 tab <- na.omit(read.csv(opt$nodes,sep = "\t"))
 node_names <- tab[[1]]
+leaves     <- tab[[9]]
 taxonom    <- tab[[10]] # for Gram-type checking
 medium     <- opt$medium
 mediadb    <- opt$mediadb
@@ -60,7 +59,7 @@ run_smetana<- opt$run_smetana
 coupling   <- opt$coupling
 
 if (checking==TRUE & is.null(opt$abuntable)) {
-  stop("When --checking TRUE, a abundance table file must be specified")
+  stop("When --checking TRUE, an abundance table file must be specified")
 } else if (checking == TRUE) {
   abuntable = opt$abuntable
 }
@@ -68,7 +67,6 @@ if (checking==TRUE & is.null(opt$abuntable)) {
 nucmer_path     <- opt$nucmer
 showcoords      <- opt$showcoords
 
-tree_file         <- opt$tree
 otus_fasta_file   <- opt$fasta
 db_16S            <- opt$db16s
 db_protein_folder <- opt$dbproteins
@@ -81,17 +79,9 @@ cores <- opt$cores
 # -----------------------
 # 2 --> carga de archivos
 # -----------------------
-if (!require("ape", quietly=TRUE)) BiocManager::install("ape")
-tn = ape::read.tree(tree_file)
 # TODO insert length warning here and not in check and smetana
-nodos <- mclapply(node_names, function(nodo) {
-    if (nodo %in% tn$node.label){
-      return(ape::extract.clade(tn, nodo, collapse.singles = FALSE))
-    } else if (nodo %in% tn$tip.label) {
-      return(list(tip.label=nodo))
-    } else {
-      stop(paste0("Node ", nodo, " could not be found in the given tree"))
-    }
+nodos <- mclapply((1:length(node_names)), function(nodo) {
+  list(tip.label=strsplit(leaves[nodo], ";")[[1]])
   }, mc.cores=cores)
 
 # divido el fasta en dos archivos para facilitar su parsing después:
