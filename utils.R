@@ -163,7 +163,7 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
   #                                                                                    
   # Returns a character vector with the leaf names and hits (the same list of the      
   # queries_v_hits file).                                                              
-  
+
   # Creo un archivo temporal en formato fasta que contenga las secuencias de ese nodo
   write(
     simplify2array(mclapply(colnames(node_16S), FUN=function(hoja){
@@ -208,7 +208,7 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
   
   # Lista filtrada de hits a modelar
   queries_v_hits = system(paste("awk -F ' ' -v q='' '{if ($13!=q) {q=$13; print $13,$12}}' ",
-                                filepath,"nucmer_temp2",sep=""), intern = TRUE)
+                                filepath,"nucmer_temp2", sep=""), intern = TRUE)
   
   # guardo parejas como archivo (a modo de índice informativo)
   write(queries_v_hits, file=paste0(filepath, "queries_v_hits"))
