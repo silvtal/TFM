@@ -23,3 +23,6 @@ Las funciones definidas para estos scripts se encuentran en **utils.R**.
 
 Por último, se han desarrollado dos scripts en Python para crear los consensos: **consenso.py** crea un modelo SBML a partir de otros modelos SBML y **consenso_EGG.py** crea una tabla de anotaciones consenso a partir de múltiples archivos de anotaciones.
 
+## Input
+
+La descripción del formato de los ficheros de entrada está desactualizada en el Anexo: ahora no se necesita un árbol filogenético, y además el fichero con la información de los nodos de interés es diferente (incluye una lista de las hojas de cada nodo). Se incluyen en este repositorio ficheros de ejemplo, además de un script de prueba ("test")

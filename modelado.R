@@ -2,7 +2,6 @@
 
 start.time <- Sys.time() # para devolver al final el tiempo de ejecución
 
-
 # -------------------------
 #        FUNCIONES         
 # -------------------------
@@ -11,7 +10,7 @@ library("parallel")
 library("optparse")
 home <- strsplit(paste0("./",getopt::get_Rscript_filename()),split="/")[[1]]
 home <- paste(home[-length(home)],collapse="/")
-source(paste0(home,"/utils.R")) # cargo las funciones del paquete
+source(paste0(home,"/utils.R")) # cargo las funciones del paquete; includes rndnum (seed)
 
 # -------------------------------
 # 1 --> Definiciones preliminares
@@ -82,18 +81,27 @@ cores <- opt$cores
 # TODO insert length warning here and not in check and smetana
 nodos <- mclapply((1:length(node_names)), function(nodo) {
   list(tip.label=strsplit(leaves[nodo], ";")[[1]])
-  }, mc.cores=cores)
+}, mc.cores=cores)
+
+## DEBUG
+# for (nodo in (1:length(nodos))) {
+#   for (name in node_names) {
+#     if (name %in% nodos[[nodo]]$node.label) {
+#       print(paste(name,"in",node_names[nodo]))
+#     } else {print("no")}
+#   }
+# }
 
 # divido el fasta en dos archivos para facilitar su parsing después:
-system(paste0("cat ",otus_fasta_file," | grep '>' > 99_otus_col1"))
-system(paste0('cat ',otus_fasta_file,' | grep ">" -v  > 99_otus_col2'))
+system(paste0("cat ",otus_fasta_file," | grep '>' > 99_otus_col1_",rndnum))
+system(paste0('cat ',otus_fasta_file,' | grep ">" -v  > 99_otus_col2_',rndnum))
 
-df1 <- read.csv("99_otus_col1",header = F)
-fasta <- read.csv("99_otus_col2",header = F)
+df1 <- read.csv(paste0("99_otus_col1_",rndnum), header = F)
+fasta <- read.csv(paste0("99_otus_col2_",rndnum),header = F)
 rownames(fasta) <- sub(">", "", df1[,1]) # elimino ">"
 fasta <- as.data.frame(t(fasta)) # Columna 1: > ID. Columna 2: secuencia
 
-system("rm 99_otus_col*") # elimino archivos temporales
+system(paste0("rm 99_otus_col*_",rndnum)) # elimino archivos temporales
 
 # ------------------------------------------------
 # 3 --> alinear cada hoja, filtrar y hacer modelos
@@ -109,28 +117,28 @@ if (checking == TRUE) {
                         cores = cores)
   
   nodos_16S    <- mclapply(checked_tipl, function(n) {fasta[unique(n)]}, mc.cores=cores)
-  } else {
-    # De cada hoja (sin checking), cojo la secuencia de 16S del fasta original
-    nodos_16S    <- mclapply(nodos, function(nodo) {fasta[nodo$tip.label]}, mc.cores=cores)
-  }
+} else {
+  # De cada hoja (sin checking), cojo la secuencia de 16S del fasta original
+  nodos_16S    <- mclapply(nodos, function(nodo) {fasta[nodo$tip.label]}, mc.cores=cores)
+}
 
 system("mkdir models")
 # Para cada nodo creo una carpeta de resultados
 for (i in c(1:length(nodos_16S))) {
   filepath   <- paste("models/",node_names[i],"/",sep="")
   system(paste("mkdir", filepath)) # la carpeta tendrá el mismo nombre que el nodo
-
+  
   # Alineo cada hoja de cada nodo con Nucmer y obtengo un genoma adecuado para cada una,
   # seleccionando solo las hojas cuyos hits pasan un filtro de calidad
   nucmer_res_final <- find_alignment_hits(filepath, nodos_16S[[i]], nucmer_path, db_16S, showcoords, cores)
-
+  
   # Modelado con CarveMe de todas las hojas de cada nodo que pasan el filtro de Nucmer
   print(paste0("Creating models for ",node_names[i],"..."))
   dump <- simplify2array(mclapply(nucmer_res_final, 
-                                  FUN = function(line) {carve(line, taxonom[i], filepath, db_protein_folder)},mc.cores=cores))
+                                  FUN = function(line) {carve(line, taxonom[i], mediadb, media, filepath, db_protein_folder)},mc.cores=cores))
   print(paste0("Finished modelling for ",node_names[i],"."))
   
-  }
+}
 
 # -------------------------------------
 # 4 --> análisis metabólico con Smetana
@@ -139,10 +147,10 @@ for (i in c(1:length(nodos_16S))) {
 if (run_smetana == TRUE) {
   # Definimos la lista de parejas a analizar
   if (checking == TRUE) {
-    pairs <- check(nodo, abunds, cores)
-    } else {
-      pairs <- expand.grid(nodos[[1]]$tip.label, nodos[[2]]$tip.label, KEEP.OUT.ATTRS = F)
-    }
+    pairs <- checked_tipl
+  } else {
+    pairs <- expand.grid(nodos[[1]]$tip.label, nodos[[2]]$tip.label, KEEP.OUT.ATTRS = F)
+  }
   
   # Ejecutamos Smetana para cada pareja inter-nodo de hojas para las que se ha creado
   # un modelo. Esta lista se parejas se guardará en smetana_results/generated_pairs.txt.
@@ -164,29 +172,28 @@ if (run_smetana == TRUE) {
   }
   #~~~~~~~~~~~~~~~~~
   generated_pairs_filename = paste0(node_names[1],"_",node_names[2],"_pairs.txt")
-  dump <- file.create(paste0(output,generated_pairs_filename)) # vaciamos el archivo, de existir, o lo creamos si no existe
+  dump <- file.create(paste0(output, generated_pairs_filename)) # vaciamos el archivo, de existir, o lo creamos si no existe
   
   # Paralelización con parApply (solo para este paso)
   failed_pairs <- mcmapply(pairs, FUN=function(z) {
     smetana(z, nodos=node_names, modelfilepath="models/", output=output, 
-                        coupling=coupling, output_coupling=output_coupling, 
-                        generated_pairs_filename=generated_pairs_filename)
-    }, mc.cores=cores)
+            coupling=coupling, output_coupling=output_coupling, 
+            generated_pairs_filename=generated_pairs_filename)
+  }, mc.cores=cores)
   
   failed_pairs[simplify2array(mclapply(failed_pairs, is.null, mc.cores=cores))] <- NULL
   failed_pairs <- t(failed_pairs) # preparamos la matriz para el siguiente paso
   colnames(failed_pairs) <-  seq(length(failed_pairs[1,]))
   
   # Anotamos las parejas que no han sido analizadas por Smetana (no pasaron el filtro de Nucmer)
-  write(x=paste0("filtered out: ", 100*length(failed_pairs)/length(pairs[,1])/2,"%"), file=paste0(output,"filtered_out_pairs.txt"))
+  write(x=paste0("filtered out: ", 100*length(failed_pairs)/length(pairs[,1])/2,"%"), file=paste0(output,"filtered_out_pairs_",rndnum,".txt"))
   dump <- mclapply(colnames(failed_pairs), FUN=function(col){
-    cat(failed_pairs[,col],"\n", file=paste0(output,"filtered_out_pairs.txt"), append=T)
-    }, mc.cores=cores)
-
+    cat(failed_pairs[,col],"\n", file=paste0(output,"filtered_out_pairs_",rndnum,".txt"), append=T)
+  }, mc.cores=cores)
+  
   print(paste0("Finished SMETANA analysis."))
 }
 # 
 end.time <- Sys.time()
 time.taken <- end.time - start.time
 print(paste0("Execution time: ",format(time.taken,format = "%H %M %S")))
-

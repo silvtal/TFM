@@ -1,16 +1,16 @@
 #!/usr/bin/env Rscript
 library(parallel)
 
-nucmer <- function(nucmer_path, db_16S, fasta_16S) {
+rndnum <- runif(n = 1)*10000000 # random number for tempfiles. Helps avoid superposition when there are multiple parallel processes
+
+nucmer <- function(nucmer_path, db_16S, fasta_16S, prefix="out") {
   # Alinea cada secuencia del archivo fasta indicado ("fasta_16S") con las secuencias
   # de la base de datos ("db_16S") y devuelve todos los hits en un archivo llamado
   # "./out.delta".
-  system(paste(nucmer_path, db_16S, fasta_16S))
+  system(paste(nucmer_path, db_16S, fasta_16S, "-p", prefix))
 }
 
-
-
-check = function(nodos, abuntable, cutoff = 0, cores=4) {
+check = function(nodos, abuntable, cutoff = 0, cores=1) {
   # Dada una pareja de nodos ("nodos", formato ape::phylo) y una tabla de 
   # abundancias, determina y devuelve las combinaciones de OTUs inter-nodo que
   # están presentes en una misma muestra experimental.
@@ -60,11 +60,11 @@ check_intra = function(nodos, abuntable) {
   
   filtered_pairs  = list(pairs1,pairs2)
   return(filtered_pairs)
-  }
+}
 
 
 
-gram  = function(taxonom, gramneg = "gramneg.csv", grampos = "grampos.csv") {
+gram  = function(taxonom, mediadb, media, gramneg = "gramneg.csv", grampos = "grampos.csv") {
   # Dado un string con la taxonomía en formato GreenGenes, devuelve si es 
   # gram-positiva o gram-negativa. Si no se reconoce como G+ ni G-, devuelve
   # un string vacío.
@@ -73,10 +73,10 @@ gram  = function(taxonom, gramneg = "gramneg.csv", grampos = "grampos.csv") {
   grampos <- levels(read.table(grampospath)[[1]])
   
   if (phylum %in% gramneg) { #FIXTHIS
-    result <- "--verbose -u gramneg -g M9[cit] --mediadb ../my_media.tsv"
+    result <- paste0("--verbose -u gramneg -g ", media, " --mediadb ", mediadb)
   }
   else if (phylum %in% grampos) {
-    result <- "--verbose -u grampos -g M9[cit] --mediadb ../my_media.tsv"
+    result <- paste0("--verbose -u grampos -g ", media, " --mediadb ", mediadb)
   }
   else {
     result <- ""
@@ -87,7 +87,7 @@ gram  = function(taxonom, gramneg = "gramneg.csv", grampos = "grampos.csv") {
 
 
 
-carve = function(line, taxonom, outputpath, db_protein_folder) {
+carve = function(line, taxonom, mediadb, media, outputpath, db_protein_folder) {
   # Dado un string del tipo "<ID de hoja> <ID de genoma anotado>", crea un
   # modelo metabólico de dicha hoja a partir del archivo correspondiente al
   # genoma dado.
@@ -98,7 +98,7 @@ carve = function(line, taxonom, outputpath, db_protein_folder) {
     print(paste0(outf," model already exists. Moving to the next one..."))
   } else {
     system(paste0("carve ",db_protein_folder,file,"_protein.faa ",
-                gram(taxonom)," -o ",outf)) # nombres de archivo = nombre de hoja
+                  gram(taxonom, mediadb, media)," -o ",outf)) # nombres de archivo = nombre de hoja
     print(paste0(outf," model created"))
   }
 }
@@ -167,17 +167,20 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
   # Creo un archivo temporal en formato fasta que contenga las secuencias de ese nodo
   write(
     simplify2array(mclapply(colnames(node_16S), FUN=function(hoja){
-      paste(paste(">",hoja,sep=""),as.character(node_16S[hoja][,]),sep="\n")},mc.cores=cores)),
-    file="sec_temp.fasta")
+      paste(paste(">",hoja,sep=""),as.character(node_16S[hoja][,]),sep="\n")}, mc.cores=cores)),
+    file=paste0("sec_temp_", rndnum, ".fasta"))
   
   # Alineo cada una de sus hojas con la base de datos
-  nucmer(nucmer_path, db_16S, "sec_temp.fasta")
+  nucmer(nucmer_path = nucmer_path, 
+         db_16S =db_16S,
+         fasta_16S = paste0("sec_temp_", rndnum, ".fasta"),
+         prefix = rndnum)
   
-  system(paste("mv out.delta",filepath))
+  system(paste0("mv ", rndnum, ".delta ", filepath))
   
   # Descarto hits con identidad por debajo de 97% con show-coords
-  nucmer_res <- system(paste(showcoords," -c -l -I 97 ",filepath, 
-                             "out.delta",sep=""), intern = TRUE)
+  nucmer_res <- system(paste(showcoords," -c -l -I 97 ",filepath,
+                             paste0(rndnum, ".delta"), sep=""), intern = TRUE)
   # -c  Include percent coverage information
   # -l  Include the sequence length information
   # -I float    Set minimum percent identity to display
@@ -215,7 +218,7 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
                filepath,"nucmer_temp2 > ",filepath,"genomes",sep=""), intern = TRUE)
   
   # Borrado de archivos temporales
-  system(paste("rm sec_temp.fasta ", filepath,"nucmer_temp*",sep=""))
+  system(paste0("rm sec_temp_", rndnum, ".fasta ", filepath,"nucmer_temp*",sep=""))
   
   return(queries_v_hits)
 } 
@@ -227,7 +230,7 @@ emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_p
                 db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",
                 outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
   returned <- system(paste0(emapper_path," --annotate_hits_table ",outputdir,"/",outputname,
-                ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir," --override"))
+                            ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir," --override"))
   if (returned != 0) {
     stop("eggNOG-mapper returned non-zero status. If your Diamond version is different from the eggNOG-mapper one 
          (e.g. the CarveMe version is in the PATH) please create a new database with create_compatible_database.R 
@@ -252,4 +255,3 @@ annotate = function(genomes, outputdir, db_protein_folder, emapper_path, cores) 
             cores=cores) 
   },mc.cores=cores))
 }
-
