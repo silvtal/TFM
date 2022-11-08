@@ -83,15 +83,6 @@ nodos <- mclapply((1:length(node_names)), function(nodo) {
   list(tip.label=strsplit(leaves[nodo], ";")[[1]])
 }, mc.cores=cores)
 
-## DEBUG
-# for (nodo in (1:length(nodos))) {
-#   for (name in node_names) {
-#     if (name %in% nodos[[nodo]]$node.label) {
-#       print(paste(name,"in",node_names[nodo]))
-#     } else {print("no")}
-#   }
-# }
-
 # divido el fasta en dos archivos para facilitar su parsing después:
 system(paste0("cat ",otus_fasta_file," | grep '>' > 99_otus_col1_",rndnum))
 system(paste0('cat ',otus_fasta_file,' | grep ">" -v  > 99_otus_col2_',rndnum))
@@ -115,8 +106,7 @@ if (checking == TRUE) {
                         cutoff = 0,
                         abuntable = abuntable,
                         cores = cores)
-  
-  nodos_16S    <- mclapply(checked_tipl, function(n) {fasta[unique(n)]}, mc.cores=cores)
+  nodos_16S    <- mclapply(checked_tipl, function(n) {fasta[as.character(unique(n))]}, mc.cores=cores)
 } else {
   # De cada hoja (sin checking), cojo la secuencia de 16S del fasta original
   nodos_16S    <- mclapply(nodos, function(nodo) {fasta[nodo$tip.label]}, mc.cores=cores)
