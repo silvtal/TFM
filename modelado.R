@@ -142,13 +142,13 @@ for (otu in names(nodos_16S[[i]])) {
                                   FUN = function(line) {carve(line, taxonom[i], mediadb, media, filepath, db_protein_folder)},mc.cores=cores))
    print(paste0("Finished generating models for ",node_names[i],"."))
    }, error=function(cond) {
-	message("nucmer_res_final:")
-	message(nucmer_res_final)
-        print(paste0("No models generated for ",node_names[i],"; THERE USED TO BE AN ERROR HERE, IS IT OK NOW; debug"))
-        },
-warning=function(cond) {warning(cond)})
+	      print("No models left to generate with CarveMe, moving on...")
+        print(paste0("No models generated for ",node_names[i]))
+        }, warning=function(cond) {
+          warning(cond)
+          }
+   )
   }
-  print(paste0("No models generated for ",node_names[i],"."))
 }
 
 # -------------------------------------
