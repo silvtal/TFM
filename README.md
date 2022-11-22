@@ -26,3 +26,9 @@ Por último, se han desarrollado dos scripts en Python para crear los consensos:
 ## Input
 
 La descripción del formato de los ficheros de entrada está desactualizada en el Anexo: ahora no se necesita un árbol filogenético, y además el fichero con la información de los nodos de interés es diferente (incluye una lista de las hojas de cada nodo). Se incluyen en este repositorio ficheros de ejemplo, además de un script de prueba ("test")
+
+## Troubleshooting
+
+- Si se instalan CarveMe/Python3.7 en un entorno de Conda, se puede activar este entorno desde el propio script. Por ejemplo, en la llamada de la función `carve`: `source ~/.bashrc && conda activate carveme && carve ",db_protein_folder`(...). El `source` a `.bashrc` a veces es necesario para habilitar el comando `conda` 
+
+- Si Smetana y/o CarveMe no detectan CPLEX o la versión correcta de CPLEX, hay que [definir la variable global `PYTHONPATH`](https://www.ibm.com/docs/en/icos/20.1.0?topic=cplex-setting-up-python-api) correctamente 
