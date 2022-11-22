@@ -114,26 +114,46 @@ if (checking == TRUE) {
 
 system("mkdir models")
 # Para cada nodo creo una carpeta de resultados
-for (i in c(1:length(nodos_16S))) {
+### skip those otus that have already had a model made
+for (i in 1:length(nodos_16S)) {
+  filtered_nodos_16S <- list()
+
   filepath   <- paste("models/",node_names[i],"/",sep="")
   system(paste("mkdir", filepath)) # la carpeta tendrá el mismo nombre que el nodo
-  
+  already_existing <- lapply(list.files(filepath), basename)
+
+for (otu in names(nodos_16S[[i]])) {
+	if (paste0(otu, ".xml") %in% already_existing) {
+		message(paste0("skipping ", otu, ", model already exists"))
+	} else {
+		filtered_nodos_16S[otu] <- nodos_16S[[i]][otu] 
+	}
+}
+
   # Alineo cada hoja de cada nodo con Nucmer y obtengo un genoma adecuado para cada una,
   # seleccionando solo las hojas cuyos hits pasan un filtro de calidad
-  nucmer_res_final <- find_alignment_hits(filepath, nodos_16S[[i]], nucmer_path, db_16S, showcoords, cores)
-  
-  # Modelado con CarveMe de todas las hojas de cada nodo que pasan el filtro de Nucmer
+  nucmer_res_final <- find_alignment_hits(filepath, setNames(data.frame(filtered_nodos_16S), names(filtered_nodos_16S)), nucmer_path, db_16S, showcoords, cores)
+
+  #Modelado con CarveMe de todas las hojas de cada nodo que pasan el filtro de Nucmer
   print(paste0("Creating models for ",node_names[i],"..."))
-  dump <- simplify2array(mclapply(nucmer_res_final, 
+  if (!is.null(nucmer_res_final)) {
+    out <- tryCatch({
+    dump <- simplify2array(mclapply(nucmer_res_final, 
                                   FUN = function(line) {carve(line, taxonom[i], mediadb, media, filepath, db_protein_folder)},mc.cores=cores))
-  print(paste0("Finished modelling for ",node_names[i],"."))
-  
+   print(paste0("Finished generating models for ",node_names[i],"."))
+   }, error=function(cond) {
+	message("nucmer_res_final:")
+	message(nucmer_res_final)
+        print(paste0("No models generated for ",node_names[i],"; THERE USED TO BE AN ERROR HERE, IS IT OK NOW; debug"))
+        },
+warning=function(cond) {warning(cond)})
+  }
+  print(paste0("No models generated for ",node_names[i],"."))
 }
 
 # -------------------------------------
 # 4 --> análisis metabólico con Smetana
 # -------------------------------------
-
 if (run_smetana == TRUE) {
   # Definimos la lista de parejas a analizar
   if (checking == TRUE) {
@@ -165,12 +185,12 @@ if (run_smetana == TRUE) {
   dump <- file.create(paste0(output, generated_pairs_filename)) # vaciamos el archivo, de existir, o lo creamos si no existe
   
   # Paralelización con parApply (solo para este paso)
-  failed_pairs <- mcmapply(pairs, FUN=function(z) {
-    smetana(z, nodos=node_names, modelfilepath="models/", output=output, 
-            coupling=coupling, output_coupling=output_coupling, 
+  failed_pairs <- mclapply(data.frame(t(pairs)), FUN=function(z) {
+    smetana(z, nodos=node_names, modelfilepath="models/", output=output,
+            coupling=coupling, output_coupling=output_coupling,
             generated_pairs_filename=generated_pairs_filename)
   }, mc.cores=cores)
-  
+
   failed_pairs[simplify2array(mclapply(failed_pairs, is.null, mc.cores=cores))] <- NULL
   failed_pairs <- t(failed_pairs) # preparamos la matriz para el siguiente paso
   colnames(failed_pairs) <-  seq(length(failed_pairs[1,]))
