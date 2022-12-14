@@ -228,7 +228,7 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
 emapper = function(input_fa, db_protein_folder, outputname, outputdir, emapper_path, cores) {
   system(paste0(emapper_path," -m diamond --cpu ",cores," --no_annot --no_file_comments -i ",
                 db_protein_folder, input_fa,"_protein.faa"," -o ",outputname," --output_dir ",
-                outputdir," --temp_dir /dev/shm --dmnd_db $PWD/",dmnd_db," --override"))
+                outputdir," --temp_dir /dev/shm --dmnd_db ",dmnd_db," --override"))
   returned <- system(paste0(emapper_path," --annotate_hits_table ",outputdir,"/",outputname,
                             ".emapper.seed_orthologs -o ",outputname," --output_dir ",outputdir," --override"))
   if (returned != 0) {

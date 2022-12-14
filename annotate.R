@@ -98,11 +98,13 @@ db_protein_folder <- opt$dbproteins
 emapper_path      <- opt$emapper_path
 genomes           <- opt$genomes
 
+# dmnd_db is used by emapper() , which is used by annotate()
 if (is.null(opt$dmnd_db)) {
   emapper_folder  <- system(paste0("echo $(dirname ",emapper_path,")"),intern=TRUE)
   dmnd_db         <- paste0(emapper_folder,"/data/eggnog_proteins.dmnd")
-} else
+} else {
   dmnd_db         <- opt$dmnd_db
+}
 
 # =======================
 #   Anotar los genomas   
