@@ -10,8 +10,14 @@ start.time <- Sys.time() # para devolver al final el tiempo de ejecución
 library("optparse")
 library("parallel")
 
-home <- strsplit(paste0("./",getopt::get_Rscript_filename()),split="/")[[1]]
+home <- strsplit(paste0(getopt::get_Rscript_filename()),split="/")[[1]]
 home <- paste(home[-length(home)],collapse="/")
+print(home)
+
+if (nchar(home) == 0) {
+  home <- "."
+}
+
 source(paste0(home,"/utils.R")) # cargo las funciones del paquete
 
 # ==============
@@ -90,7 +96,7 @@ outputdir         <- opt$outputdir
 outputname        <- opt$outputname
 db_protein_folder <- opt$dbproteins
 emapper_path      <- opt$emapper_path
-
+genomes           <- opt$genomes
 
 if (is.null(opt$dmnd_db)) {
   emapper_folder  <- system(paste0("echo $(dirname ",emapper_path,")"),intern=TRUE)
@@ -103,7 +109,7 @@ if (is.null(opt$dmnd_db)) {
 # =======================
 
 if (skip_alignment == TRUE) {
-  genomes <- scan(genomes,character(),sep="\n")
+  genomes <- scan(genomes, character(),sep="\n")
   
   #   Anotar el genoma asignado a cada hoja con eggNOG-mapper   
   # ------------------------------------------------------------
@@ -176,3 +182,4 @@ if (skip_alignment == TRUE) {
 end.time <- Sys.time()
 time.taken <- end.time - start.time
 print(paste0("Execution time: ",format(time.taken,format = "%H %M %S")))
+

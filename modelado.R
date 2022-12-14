@@ -8,9 +8,14 @@ start.time <- Sys.time() # para devolver al final el tiempo de ejecución
 
 library("parallel")
 library("optparse")
-home <- strsplit(paste0("./",getopt::get_Rscript_filename()),split="/")[[1]]
+
+home <- strsplit(paste0(getopt::get_Rscript_filename()),split="/")[[1]]
 home <- paste(home[-length(home)],collapse="/")
-source(paste0(home,"/utils.R")) # cargo las funciones del paquete; includes rndnum (seed)
+print(home)
+
+if (nchar(home) == 0) {
+  home <- "."
+}
 
 # -------------------------------
 # 1 --> Definiciones preliminares
@@ -114,7 +119,7 @@ if (checking == TRUE) {
 
 system("mkdir models")
 # Para cada nodo creo una carpeta de resultados
-### skip those otus that have already had a model made
+###### skip those otus that have already had a model made
 for (i in 1:length(nodos_16S)) {
   filtered_nodos_16S <- list()
 
@@ -142,18 +147,19 @@ for (otu in names(nodos_16S[[i]])) {
                                   FUN = function(line) {carve(line, taxonom[i], mediadb, media, filepath, db_protein_folder)},mc.cores=cores))
    print(paste0("Finished generating models for ",node_names[i],"."))
    }, error=function(cond) {
-	      print("No models left to generate with CarveMe, moving on...")
-        print(paste0("No models generated for ",node_names[i]))
-        }, warning=function(cond) {
-          warning(cond)
-          }
-   )
+	message("nucmer_res_final:")
+	message(nucmer_res_final)
+        print(paste0("No models generated for ",node_names[i],"; THERE USED TO BE AN ERROR HERE, IS IT OK NOW; debug"))
+        },
+warning=function(cond) {warning(cond)})
   }
+  print(paste0("No models generated for ",node_names[i],"."))
 }
 
 # -------------------------------------
 # 4 --> análisis metabólico con Smetana
 # -------------------------------------
+save.image("ola.RData")
 if (run_smetana == TRUE) {
   # Definimos la lista de parejas a analizar
   if (checking == TRUE) {
@@ -185,7 +191,7 @@ if (run_smetana == TRUE) {
   dump <- file.create(paste0(output, generated_pairs_filename)) # vaciamos el archivo, de existir, o lo creamos si no existe
   
   # Paralelización con parApply (solo para este paso)
-  failed_pairs <- mclapply(data.frame(t(pairs)), FUN=function(z) {
+   failed_pairs <- mclapply(data.frame(t(pairs)), FUN=function(z) {
     smetana(z, nodos=node_names, modelfilepath="models/", output=output,
             coupling=coupling, output_coupling=output_coupling,
             generated_pairs_filename=generated_pairs_filename)
