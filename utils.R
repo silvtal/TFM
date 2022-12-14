@@ -211,11 +211,11 @@ find_alignment_hits = function(filepath, node_16S, nucmer_path, db_16S, showcoor
                                 filepath,"nucmer_temp2", sep=""), intern = TRUE)
   
   # guardo parejas como archivo (a modo de índice informativo)
-  write(queries_v_hits, file=paste0(filepath, "queries_v_hits"))
+  write(queries_v_hits, file=paste0(filepath, "queries_v_hits", append=TRUE))
   
   # guardo solo los genomas en un archivo (útil para anotar posteriormente por ejemplo)
   system(paste("awk -F ' ' -v q='' '{if ($13!=q) {q=$13; print $12}}' ",
-               filepath,"nucmer_temp2 > ",filepath,"genomes",sep=""), intern = TRUE)
+               filepath,"nucmer_temp2 >> ",filepath,"genomes",sep=""), intern = TRUE)
   
   # Borrado de archivos temporales
   system(paste0("rm sec_temp_", rndnum, ".fasta ", filepath,"nucmer_temp*",sep=""))
