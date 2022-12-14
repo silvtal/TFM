@@ -42,12 +42,10 @@ option_list <- list(
               help="Path to the show-coords executable (e.g. './MUMmer3.23/show-coords', '~/my_apps/show_coords'). Only needed when input is --nodes.", metavar="character"),
   make_option(c("--emapper_path"), type="character", default=paste0(home,"/eggnog-mapper-master/emapper.py"),
               help="Path to the emapper.py executable file (e.g. './eggnog-mapper-my_version/emapper.py').",metavar="character"),
-  make_option(c("--tree"), type="character", default=paste0(home,"/99_otus_nodes.tree"),
-              help="16S phylogenetic tree file name. Only needed when input is --nodes. The node names of the trees should be modified, and a genuine name should be given for all. This could be done for example using R with the function 'makeNodeLabel' from 'ape' package. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
   make_option(c("--fasta"), type="character", default=paste0(home,"/99_otus.fasta"),
-              help="16S sequences of all the leaves of the tree, in multifasta format. Only needed when input is --nodes. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
+              help="16S sequences to be analyzed in multifasta format. Only needed when input is --nodes. Default is './99_otus_nodes.tree' (Greengenes gg_13_5).", metavar="character"),
   make_option(c("--db16s"), type="character", default=paste0(home,"/bac120_ssu_reps_r95.fna"),
-              help="16S sequences database. Only needed when input is --nodes. Nucmer will align the tree leaves' 16S sequences to this database. Default is './bac120_ssu_reps_r95.fna' (from GTDB https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/).", metavar="character"),
+              help="16S sequences database. Only needed when input is --nodes. Nucmer will align the 16S sequences to this database. Default is './bac120_ssu_reps_r95.fna' (from GTDB https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/).", metavar="character"),
   make_option(c("--dbproteins"), type="character", default=paste0(home,"/protein_faa_reps/bacteria/"),
               help="Aminoacid sequences database. EggNOG-mapper will annotate files from here. Default is 'protein_faa_reps/bacteria/' (from GTDB https://data.ace.uq.edu.au/public/gtdb/data/releases/release95/95.0/genomic_files_reps/).", metavar="character"),
   make_option(c("--dmnd_db"), type="character", default=NULL,
@@ -68,7 +66,6 @@ if (!is.null(opt$nodes) && is.null(opt$genomes)) {
   taxonom    <- levels(t[[2]])
   nucmer_path<- opt$nucmer
   showcoords <- opt$showcoords
-  tree_file         <- opt$tree
   otus_fasta_file   <- opt$fasta
   db_16S            <- opt$db16s
   
