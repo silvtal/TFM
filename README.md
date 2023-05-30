@@ -11,7 +11,7 @@ The main scripts featured here were used for annotated genome assignment, annota
 
 ## General outline of the proposed pipeline
 
-![](https://github.com/silvtal/TFM/blob/master/Anexo/Esquema.png)
+![](https://github.com/silvtal/TFM/blob/master/Anexo/Diagram.png)
 
 ## Description of the scripts
 
