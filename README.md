@@ -1,34 +1,38 @@
-# TFM
-**ES**: Este repositorio recoge los *scripts* desarrollados para automatizar los análisis correspondientes al Trabajo de Fin de Máster "Modelización metabólica de comunidades microbianas estables crecidas con fuentes de carbono y energía únicas y simples" (Silvia Talavera Marcos, Máster en Bioinformática y Biología Computacional, Universidad Autónoma de Madrid). El trabajo puede descargarse [aquí](http://hdl.handle.net/10486/695123).
+# Master's thesis
 
-**EN**: This repository includes scripts from Master's Thesis "Metabolic modeling of microbial communities grown in simple energy and carbon sources" (Silvia Talavera Marcos, Master's Degree in Bioinformatics and Computational Biology, Autonomous University of Madrid). The work is downloadable [here](http://hdl.handle.net/10486/695123).
+[![es](https://img.shields.io/badge/lang-es-yellow.svg)](https://github.com/silvtal/TFM/blob/master/README.es.md)
 
-----------
+This repository includes scripts from Master's Thesis "Metabolic modeling of microbial communities grown in simple energy and carbon sources" (Silvia Talavera Marcos, Master's Degree in Bioinformatics and Computational Biology, Autonomous University of Madrid). The work is downloadable [here](http://hdl.handle.net/10486/695123).
 
-## Esquema general del _pipeline_ propuesto
+The main scripts featured here were used for annotated genome assignment, annotation, generation of metabolic models and flux balance analysis at "Leveraging phylogenetic signal to unravel microbial community function and assembly rules" by Talavera-Marcos, Parras and Aguirre de Cárcer (https://doi.org/10.21203/rs.3.rs-2272005/v1)
 
-![](https://github.com/urihs/TFM/blob/master/Anexo/Esquema.png)
 
-## Descripción de los _scripts_
+----------------
 
-**modelado.R** incluye el alineamiento con Nucmer, la creación de modelos con CarveMe y (opcionalmente) el análisis con Smetana para una pareja de nodos dada.
+## General outline of the proposed pipeline
 
-**annotate.R** se encarga de la anotación funcional con eggNOG-mapper y, opcionalmente, la creación de un modelo consenso. También es capaz de llamar a Nucmer para iniciar el proceso desde el principio. **create_compatible_database.R** es un _script_ adicional que genera una base de datos compatible con la versión de Diamond que sea utilizada automáticamente por eggNOG-mapper desde _annotate.R_.
+![](https://github.com/silvtal/TFM/blob/master/Anexo/Esquema.png)
 
-Las funciones definidas para estos scripts se encuentran en **utils.R**.
+## Description of the scripts
 
-**RefrFBA.py** es un _script_ que se encarga de ejecutar simulaciones de FBA para todos los modelos de un PCG dado. Devuelve las tasas de crecimiento en forma de archivos _.csv_ y por la salida estándar. 
+**modelado.R** includes alignment with Nucmer, model creation with CarveMe, and (optional) analysis with Smetana for a given pair of nodes. It calls the rest of the scripts, but has strict parameters hard-coded.
 
-**parser.R** se encarga de generar informes en formato de texto plano que resumen los resultados de Smetana.
+**annotate.R** is used for functional annotation using eggNOG-mapper and, optionally, creating a consensus model. It can also call Nucmer to start the process from the beginning. **create_compatible_database.R** is an additional script that can generate a database compatible with the version of Diamond automatically used by eggNOG-mapper from _annotate.R_.
 
-Por último, se han desarrollado dos scripts en Python para crear los consensos: **consenso.py** crea un modelo SBML a partir de otros modelos SBML y **consenso_EGG.py** crea una tabla de anotaciones consenso a partir de múltiples archivos de anotaciones.
+Functions called in these scripts are located in **utils.R**.
+
+**RefrFBA.py** is a script that performs flux balance analysis (FBA) for all models of a given phylogenetic core group (PCG). It returns the growth rates as _.csv_ files and also through standard output.
+
+**parser.R** generates plain text reports summarizing the results of Smetana.
+
+Finally, two Python scripts have been developed to create the consensus annotations and models: **consenso.py** creates an SBML model from other SBML models, and **consenso_EGG.py** creates a consensus annotation table from multiple annotation files.
 
 ## Input
 
-La descripción del formato de los ficheros de entrada está desactualizada en el Anexo: ahora no se necesita un árbol filogenético, y además el fichero con la información de los nodos de interés es diferente (incluye una lista de las hojas de cada nodo). Se incluyen en este repositorio ficheros de ejemplo, además de un script de prueba ("test")
+The description of the input file format is outdated in the Appendix: now a phylogenetic tree is not required, and the file containing information about the nodes of interest is different (includes a list of the leaves for each node). Example files are included in this repository, along with a test script ("test").
 
 ## Troubleshooting
 
-- Si se instalan CarveMe/Python3.7 en un entorno de Conda, se puede activar este entorno desde el propio script. Por ejemplo, en la llamada de la función `carve`: `source ~/.bashrc && conda activate carveme && carve ",db_protein_folder`(...). El `source` a `.bashrc` a veces es necesario para habilitar el comando `conda` 
+- If CarveMe/Python3.7 is installed in a Conda environment, you can activate this environment from the script itself. For example, the `carve()` function command can be modified to: `conda activate carveme && carve ",db_protein_folder`(...).
 
-- Si Smetana y/o CarveMe no detectan CPLEX o la versión correcta de CPLEX, hay que [definir la variable global `PYTHONPATH`](https://www.ibm.com/docs/en/icos/20.1.0?topic=cplex-setting-up-python-api) correctamente 
+- If Smetana and/or CarveMe do not detect CPLEX or the correct version of CPLEX, the global variable `PYTHONPATH` needs to be [properly defined](https://www.ibm.com/docs/en/icos/20.1.0?topic=cplex-setting-up-python-api).
